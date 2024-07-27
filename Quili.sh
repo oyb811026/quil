@@ -198,7 +198,7 @@ function update_node() {
 # 更新本脚本
 function update_script() {
     SCRIPT_PATH="./Quili.sh"  # 定义脚本路径
-    SCRIPT_URL="https://raw.githubusercontent.com/a3165458/Quilibrium/main/Quili.sh"
+    SCRIPT_URL="https://raw.githubusercontent.com/oyb811026/quil/main/Quili.sh"
     
     # 备份原始脚本
     cp $SCRIPT_PATH "${SCRIPT_PATH}.bak"
