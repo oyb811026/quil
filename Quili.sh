@@ -59,6 +59,17 @@ kill_process() {
     fi
 }
 
+# 杀死screen会话的函数
+kill_screen_session() {
+    if screen -list | grep -q "Quili"; then
+        echo "Killing screen session 'Quili'..."
+        screen -S Quili -X quit  # 杀死指定的screen会话
+        echo "Screen session 'Quili' has been killed."
+    else
+        echo "No screen session named 'Quili' found."
+    fi
+}
+
 # 下载新版本文件的函数
 fetch() {
     files=$(curl -s https://releases.quilibrium.com/release | grep "$release_os-$release_arch")
@@ -158,6 +169,7 @@ function run_node() {
     
     if [[ $? -eq 0 ]]; then
         echo "节点已在screen会话中启动。您可以使用 'screen -r Quili' 查看状态。"
+        echo "使用 Ctrl+A+D 可以从 screen 会话中分离。"
     else
         echo "启动节点失败，请检查错误信息。"
     fi
@@ -291,11 +303,12 @@ echo "8. 升级节点版本"
 echo "9. 升级脚本版本"
 echo "10. 安装gRPC"
 echo "11. 启动主循环"
-echo "12. 退出脚本"
+echo "12. 杀死screen会话"  # 新增选项
+echo "13. 退出脚本"
 echo "======================================================================"
 
 while true; do
-    read -p "请输入选项(1-12): " choice
+    read -p "请输入选项(1-13): " choice
     case $choice in
         1) install_node ;;
         2) check_service_status ;;
@@ -308,7 +321,8 @@ while true; do
         9) update_script ;;
         10) setup_grpc ;;
         11) main ;;  # 启动主循环
-        12) exit 0 ;;  # 正常退出脚本
+        12) kill_screen_session ;;  # 杀死screen会话
+        13) exit 0 ;;  # 正常退出脚本
         *) echo "无效的选项，请重新输入。" ;;
     esac
 done
