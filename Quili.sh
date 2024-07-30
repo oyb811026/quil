@@ -207,6 +207,16 @@ function check_service_status() {
     fi
 }
 
+# 检查进程是否在运行的函数
+function is_process_running() {
+    # 使用进程名来检查进程是否在运行
+    if pgrep -f "node-.*-$release_os-$release_arch" > /dev/null; then
+        return 0  # 进程正在运行
+    else
+        return 1  # 进程未运行
+    fi
+}
+
 # 重新启动挖矿功能
 function restart_node() {
     echo "正在检查节点进程状态..."
