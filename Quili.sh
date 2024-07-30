@@ -54,28 +54,13 @@ function install_node() {
     source $HOME/.gvm/scripts/gvm
 
     ARCH=$(uname -m)
+    # 安装并使用 Go 版本
     echo "正在安装 Go 版本..."
-    gvm install go1.4 -B
-    gvm use go1.4
-    export GOROOT_BOOTSTRAP=$GOROOT
-
-    if [ "$ARCH" = "x86_64" ]; then
-        gvm install go1.17.13
-        gvm use go1.17.13
-        export GOROOT_BOOTSTRAP=$GOROOT
-
-        gvm install go1.20.2
-        gvm use go1.20.2
-    elif [ "$ARCH" = "arm64" ]; then
-        gvm install go1.17.13 -B
-        gvm use go1.17.13
-        export GOROOT_BOOTSTRAP=$GOROOT
-
-        gvm install go1.20.2 -B
+    if gvm install go1.20.2; then
         gvm use go1.20.2
     else
-        echo "不支持的架构: $ARCH"
-        return 1
+        echo "安装 go1.20.2 失败，请检查 gvm 和网络配置。"
+        exit 1
     fi
 
     echo "正在克隆 Quilibrium 仓库..."
