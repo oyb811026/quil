@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # 检查是否以root用户运行脚本
 if [ "$(id -u)" == "0" ]; then
@@ -8,6 +8,8 @@ fi
 
 # 脚本保存路径
 SCRIPT_PATH="$HOME/Quili.sh"
+release_os="darwin"
+release_arch="arm64"
 
 # 自动设置快捷键的功能
 function check_and_set_alias() {
@@ -25,6 +27,55 @@ function check_and_set_alias() {
     fi
 }
 
+# 启动进程的函数
+start_process() {
+    local node_binary="./node-$version-$release_os-$release_arch"
+    
+    if [[ ! -f $node_binary ]]; then
+        echo "Error: Node binary $node_binary does not exist."
+        exit 1
+    fi
+    
+    chmod +x "$node_binary"  # 赋予可执行权限
+    "$node_binary" &  # 后台启动进程
+    main_process_id=$!  # 获取进程ID
+    echo "Process started with PID $main_process_id"
+}
+
+# 检查进程是否在运行的函数
+is_process_running() {
+    pgrep -P $main_process_id > /dev/null
+    return $?  # 返回状态码
+}
+
+# 杀死进程的函数
+kill_process() {
+    if pgrep -f "node-.*-$release_os-$release_arch" > /dev/null; then
+        echo "Killing processes matching node-.*-$release_os-$release_arch"
+        pkill -f "node-.*-$release_os-$release_arch"
+    else
+        echo "No processes running"
+    fi
+}
+
+# 下载新版本文件的函数
+fetch() {
+    files=$(curl -s https://releases.quilibrium.com/release | grep "$release_os-$release_arch")
+    new_release=false
+
+    for file in $files; do
+        version=$(echo "$file" | cut -d '-' -f 2)
+        if [[ ! -f "./$file" ]]; then
+            echo "Downloading $file..."
+            if curl -O "https://releases.quilibrium.com/$file"; then
+                new_release=true  # 标记为有新版本
+            else
+                echo "Failed to download $file"
+            fi
+        fi
+    done
+}
+
 # 节点安装功能
 function install_node() {
     if [[ "$OSTYPE" != "darwin"* ]]; then
@@ -32,6 +83,7 @@ function install_node() {
         return 1
     fi
 
+    # 安装 Xcode 命令行工具
     if ! xcode-select -p &> /dev/null; then
         echo "正在安装 Xcode 命令行工具..."
         xcode-select --install
@@ -40,6 +92,7 @@ function install_node() {
         done
     fi
 
+    # 安装 Homebrew
     if ! command -v brew &> /dev/null; then
         echo "正在安装 Homebrew..."
         /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
@@ -51,9 +104,8 @@ function install_node() {
 
     echo "正在安装 gvm (Go 版本管理器)..."
     bash < <(curl -s -S -L https://raw.githubusercontent.com/moovweb/gvm/master/binscripts/gvm-installer)
-    source $HOME/.gvm/scripts/gvm
+    source "$HOME/.gvm/scripts/gvm"
 
-    ARCH=$(uname -m)
     # 安装并使用 Go 版本
     echo "正在安装 Go 版本..."
     if gvm install go1.20.2; then
@@ -66,13 +118,13 @@ function install_node() {
     echo "正在克隆 Quilibrium 仓库..."
     git clone https://source.quilibrium.com/quilibrium/ceremonyclient.git
 
-    cd ceremonyclient/node 
+    cd ceremonyclient/node || exit
     git switch release-cdn
 
     chmod +x release_autorun.sh
 
     echo "正在 screen 会话中启动节点..."
-    screen -dmS Quili bash -c './release_autorun.sh'
+    start_process  # 启动节点进程
 
     echo "======================================"
     echo "安装完成。要查看节点状态:"
@@ -81,6 +133,7 @@ function install_node() {
     echo "3. 使用 Ctrl-A + Ctrl-D 来从 screen 会话中分离"
     echo "======================================"
     
+    # 用户交互
     while true; do
         read -p "请选择操作 (1-3): " choice
         case $choice in
@@ -99,31 +152,35 @@ function check_service_status() {
 
 # 独立启动
 function run_node() {
-    screen -dmS Quili bash -c "source $HOME/.gvm/scripts/gvm && gvm use go1.20.2 && cd ~/ceremonyclient/node && ./release_autorun.sh"
+    screen -dmS Quili bash -c "source \$HOME/.gvm/scripts/gvm && gvm use go1.20.2 && cd ~/ceremonyclient/node && ./release_autorun.sh"
     echo "=======================已启动quilibrium 挖矿 请退出脚本使用screen 命令或者使用查看日志功能查询状态========================================="
 }
 
+# 安装最新快照
 function add_snapshots() {
     brew install unzip
-    rm -r $HOME/ceremonyclient/node/.config/store
+    rm -r "$HOME/ceremonyclient/node/.config/store"
     wget -qO- https://snapshots.cherryservers.com/quilibrium/store.zip > /tmp/store.zip
-    unzip -j -o /tmp/store.zip -d $HOME/ceremonyclient/node/.config/store
+    unzip -j -o /tmp/store.zip -d "$HOME/ceremonyclient/node/.config/store"
     rm /tmp/store.zip
 
-    screen -dmS Quili bash -c 'source $HOME/.gvm/scripts/gvm && gvm use go1.20.2 && cd ~/ceremonyclient/node && ./release_autorun.sh'
+    screen -dmS Quili bash -c "source \$HOME/.gvm/scripts/gvm && gvm use go1.20.2 && cd ~/ceremonyclient/node && ./release_autorun.sh"
 }
 
+# 备份配置文件
 function backup_set() {
     mkdir -p ~/backup
-    cat ~/ceremonyclient/node/.config/config.yml > ~/backup/config.txt
-    cat ~/ceremonyclient/node/.config/keys.yml > ~/backup/keys.txt
+    cp ~/ceremonyclient/node/.config/config.yml ~/backup/config.txt
+    cp ~/ceremonyclient/node/.config/keys.yml ~/backup/keys.txt
     echo "=======================备份完成，请执行cd ~/backup 查看备份文件========================================="
 }
 
+# 查看账户信息
 function check_balance() {
-    cd ~/ceremonyclient/node
-    version="1.4.21"
-    binary="node-$version"
+    cd ~/ceremonyclient/node || exit
+    local version="1.4.21"
+    local binary="node-$version"
+    
     if [[ "$OSTYPE" == "darwin"* ]]; then
         if [[ $(uname -m) == "arm64"* ]]; then
             binary="$binary-darwin-arm64"
@@ -134,11 +191,12 @@ function check_balance() {
         echo "unsupported OS for releases, please build from source"
         exit 1
     fi
-    ./$binary --node-info
+    ./"$binary" --node-info
 }
 
+# 解锁CPU性能限制
 function unlock_performance() {
-    cd ~/ceremonyclient/node 
+    cd ~/ceremonyclient/node || exit 
     echo "请选择要切换的版本："
     echo "1. 限制CPU50%性能版本"
     echo "2. CPU性能拉满版本"
@@ -160,7 +218,7 @@ function unlock_performance() {
 
 # 升级节点版本
 function update_node() {
-    cd ~/ceremonyclient/node
+    cd ~/ceremonyclient/node || exit
     git remote set-url origin https://source.quilibrium.com/quilibrium/ceremonyclient.git
     git pull
     git switch release-cdn
@@ -169,17 +227,16 @@ function update_node() {
 
 # 更新本脚本
 function update_script() {
-    SCRIPT_PATH="./Quili.sh"  # 定义脚本路径
-    SCRIPT_URL="https://raw.githubusercontent.com/oyb811026/quil/main/Quili.sh"
+    local script_url="https://raw.githubusercontent.com/oyb811026/quil/main/Quili.sh"
     
-    cp $SCRIPT_PATH "${SCRIPT_PATH}.bak"
+    cp "$SCRIPT_PATH" "${SCRIPT_PATH}.bak"
     
-    if curl -o $SCRIPT_PATH $SCRIPT_URL; then
-        chmod +x $SCRIPT_PATH
-        echo "脚本已更新。请退出脚本后，执行bash Quli.sh 重新运行此脚本。"
+    if curl -o "$SCRIPT_PATH" "$script_url"; then
+        chmod +x "$SCRIPT_PATH"
+        echo "脚本已更新。请退出脚本后，执行bash $SCRIPT_PATH 重新运行此脚本。"
     else
         echo "更新失败。正在恢复原始脚本。"
-        mv "${SCRIPT_PATH}.bak" $SCRIPT_PATH
+        mv "${SCRIPT_PATH}.bak" "$SCRIPT_PATH"
     fi
 }
 
@@ -187,6 +244,29 @@ function update_script() {
 function setup_grpc() {
     curl --no-cache -O - https://raw.githubusercontent.com/oyb811026/quil/main/qnode_gRPC_calls_setup.sh | bash
     echo "=======================gRPC安装完成========================================="
+}
+
+# 主循环
+function main() {
+    fetch  # 初始调用fetch函数以获取文件
+    kill_process  # 杀死可能正在运行的进程
+    start_process  # 启动进程
+
+    while true; do
+        if ! is_process_running; then  # 如果进程没有在运行
+            echo "Process crashed or stopped. Restarting..."
+            start_process  # 重新启动进程
+        fi
+
+        fetch  # 定期检查并下载新版本
+
+        if [[ "$new_release" == true ]]; then  # 如果有新版本
+            kill_process  # 杀死当前进程
+            start_process  # 启动新版本
+        fi
+
+        sleep 300  # 每300秒循环一次
+    done
 }
 
 # 自动设置快捷键
@@ -203,11 +283,12 @@ echo "7. 解锁CPU性能限制"
 echo "8. 升级节点版本"
 echo "9. 升级脚本版本"
 echo "10. 安装gRPC"
-echo "11. 退出脚本"
+echo "11. 启动主循环"
+echo "12. 退出脚本"
 echo "======================================================================"
 
 while true; do
-    read -p "请输入选项(1-11): " choice
+    read -p "请输入选项(1-12): " choice
     case $choice in
         1) install_node ;;
         2) check_service_status ;;
@@ -219,7 +300,8 @@ while true; do
         8) update_node ;;
         9) update_script ;;
         10) setup_grpc ;;
-        11) exit 0 ;;  # 正常退出脚本
+        11) main ;;  # 启动主循环
+        12) exit 0 ;;  # 正常退出脚本
         *) echo "无效的选项，请重新输入。" ;;
     esac
 done
