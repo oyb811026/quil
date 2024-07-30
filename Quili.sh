@@ -80,12 +80,13 @@ function kill_screen_session() {
 
 # 下载新版本文件的函数
 function fetch() {
+    cd ~/ceremonyclient/node || exit 1  # 切换到 ceremonyclient/node 目录
     files=$(curl -s https://releases.quilibrium.com/release | grep "$release_os-$release_arch")
     new_release=false
 
     for file in $files; do
         version=$(echo "$file" | cut -d '-' -f 2)
-        if [[ ! -f "./$file" ]]; then
+        if [[ ! -f "$file" ]]; then
             echo "下载 $file..."
             if curl -O "https://releases.quilibrium.com/$file"; then
                 new_release=true
@@ -112,7 +113,7 @@ function install_node() {
         done
     fi
     
-# 如果尚未安装,则安装 Homebrew
+    # 如果尚未安装,则安装 Homebrew
     if ! command -v brew &> /dev/null; then
         echo "正在安装 Homebrew..."
         /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
@@ -125,7 +126,7 @@ function install_node() {
     brew update
     brew install wget git screen bison gcc make
 
-# 删除旧的 gvm 安装
+    # 删除旧的 gvm 安装
     if [ -d "$HOME/.gvm" ]; then
         echo "检测到旧的 gvm 安装，正在删除..."
         rm -rf "$HOME/.gvm"
@@ -315,20 +316,22 @@ function setup_grpc() {
 
 # 主循环
 function main() {
-    fetch
-    kill_process
-    start_process
+    cd ~/ceremonyclient/node || exit 1  # 切换到 ceremonyclient/node 目录
 
     while true; do
-        if ! is_process_running; then
-            echo "进程崩溃或停止. 正在重启..."
+        # 下载最新版本文件
+        fetch
+        
+        # 检查是否有新版本
+        if [[ "$new_release" == true ]]; then
+            echo "检测到新版本，正在升级..."
+            kill_process
             start_process
         fi
 
-        fetch
-
-        if [[ "$new_release" == true ]]; then
-            kill_process
+        # 每300秒检查一次进程状态
+        if ! is_process_running; then
+            echo "进程崩溃或停止. 正在重启..."
             start_process
         fi
 
