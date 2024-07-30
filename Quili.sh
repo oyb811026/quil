@@ -26,19 +26,43 @@ function check_and_set_alias() {
     fi
 }
 
-# 启动进程的函数
-function start_process() {
-    local node_binary="./node-$version-$release_os-$release_arch"
-    
-    if [[ ! -f $node_binary ]]; then
-        echo "错误: Node binary $node_binary 不存在."
-        return 1
+# 设置下载和运行的目录
+target_dir="/ceremonyclient/node"
+
+# 检查操作系统类型
+if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    release_os="linux"
+    # 检查架构类型
+    if [[ $(uname -m) == "aarch64"* ]]; then
+        release_arch="arm64"
+    else
+        release_arch="amd64"
     fi
-    
-    chmod +x "$node_binary" || { echo "无法赋予可执行权限"; return 1; }
-    echo "在screen会话中启动进程..."
-    screen -dmS Quili bash -c "$node_binary"
-    main_process_id=$(pgrep -f "$node_binary")
+else
+    release_os="darwin"
+    release_arch="arm64"
+fi
+
+# 创建目标目录（如果不存在）
+mkdir -p "$target_dir"
+cd "$target_dir" || exit
+# 启动进程的函数
+start_process() {
+    # 根据操作系统类型启动进程
+    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        chmod +x ./node-$version-$release_os-$release_arch
+        ./node-$version-$release_os-$release_arch &
+        main_process_id=$!
+    elif [[ "$OSTYPE" == "darwin"* ]]; then
+        echo "./node-$version-$release_os-$release_arch"
+        chmod +x ./node-$version-$release_os-$release_arch
+        ./node-$version-$release_os-$release_arch &
+        main_process_id=$!
+    else
+        echo "不支持的操作系统，请从源代码构建"
+        exit 1
+    fi
+
     echo "进程已启动，PID: $main_process_id"
 }
 
@@ -78,24 +102,29 @@ function kill_screen_session() {
     fi
 }
 
-# 下载新版本文件的函数
-function fetch() {
-    cd ~/ceremonyclient/node || exit 1  # 切换到 ceremonyclient/node 目录
-    files=$(curl -s https://releases.quilibrium.com/release | grep "$release_os-$release_arch")
+# 获取最新版本的函数
+fetch() {
+    files=$(curl -s https://releases.quilibrium.com/release | grep $release_os-$release_arch)
     new_release=false
 
     for file in $files; do
         version=$(echo "$file" | cut -d '-' -f 2)
-        if [[ ! -f "$file" ]]; then
-            echo "下载 $file..."
-            if curl -O "https://releases.quilibrium.com/$file"; then
-                new_release=true
-            else
-                echo "下载失败: $file"
-            fi
+        if ! test -f "./$file"; then
+            echo "下载新版本: $file"
+            curl -O "https://releases.quilibrium.com/$file"
+            new_release=true
         fi
     done
 }
+
+# 获取最新版本
+fetch
+
+# 杀死当前运行的进程
+kill_process
+
+# 启动新进程
+start_process
 
 # 节点安装功能
 function install_node() {
@@ -208,11 +237,21 @@ function check_service_status() {
 }
 
 # 检查进程是否在运行的函数
-function is_process_running() {
-    if pgrep -f "node--darwin-arm64" > /dev/null; then
-        return 0  # 进程正在运行
+is_process_running() {
+    ps -p $main_process_id > /dev/null 2>&1
+    return $?
+}
+
+# 杀死进程的函数
+kill_process() {
+    local process_count=$(ps -ef | grep -E "node-.*-(darwin|linux)-(amd64|arm64)" | grep -v grep | wc -l)
+    local process_pids=$(ps -ef | grep -E "node-.*-(darwin|linux)-(amd64|arm64)" | grep -v grep | awk '{print $2}' | xargs)
+
+    if [ $process_count -gt 0 ]; then
+        echo "正在杀死进程: $process_pids"
+        kill $process_pids
     else
-        return 1  # 进程未运行
+        echo "没有正在运行的进程"
     fi
 }
 
@@ -362,29 +401,23 @@ function restore_backup() {
 }
 
 # 主循环
-function main() {
-    cd ~/ceremonyclient/node || exit 1  # 切换到 ceremonyclient/node 目录
+while true; do
+    # 检查进程是否仍在运行
+    if ! is_process_running; then
+        echo "进程崩溃或停止。正在重新启动..."
+        start_process
+    fi
 
-    while true; do
-        # 下载最新版本文件
-        fetch
-        
-        # 检查是否有新版本
-        if [[ "$new_release" == true ]]; then
-            echo "检测到新版本，正在升级..."
-            kill_process
-            start_process
-        fi
+    # 检查是否有新版本
+    fetch
 
-        # 每300秒检查一次进程状态
-        if ! is_process_running; then
-            echo "进程崩溃或停止. 正在重启..."
-            start_process
-        fi
+    if $new_release; then
+        kill_process
+        start_process
+    fi
 
-        sleep 300  
-    done
-}
+    sleep 300 # 每300秒检查一次
+done
 
 # 主菜单
 echo "=======================欢迎使用Quilibrium项目一键启动脚本======================="
@@ -399,7 +432,7 @@ echo "8. 解锁CPU性能限制"
 echo "9. 升级节点版本"
 echo "10. 升级脚本版本"
 echo "11. 安装gRPC"
-echo "12. 启动主循环"
+echo "12. 启动"
 echo "13. 杀死screen会话"
 echo "14. 退出脚本"
 echo "======================================================================"
@@ -418,7 +451,7 @@ while true; do
         9) update_node ;;
         10) update_script ;;
         11) setup_grpc ;;
-        12) main ;;
+        12) while ;;
         13) kill_screen_session ;;
         14) exit 0 ;;
         *) echo "无效的选项，请重新输入。" ;;
