@@ -26,43 +26,19 @@ function check_and_set_alias() {
     fi
 }
 
-# 设置下载和运行的目录
-target_dir="/ceremonyclient/node"
-
-# 检查操作系统类型
-if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-    release_os="linux"
-    # 检查架构类型
-    if [[ $(uname -m) == "aarch64"* ]]; then
-        release_arch="arm64"
-    else
-        release_arch="amd64"
-    fi
-else
-    release_os="darwin"
-    release_arch="arm64"
-fi
-
-# 创建目标目录（如果不存在）
-mkdir -p "$target_dir"
-cd "$target_dir" || exit
 # 启动进程的函数
-start_process() {
-    # 根据操作系统类型启动进程
-    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-        chmod +x ./node-$version-$release_os-$release_arch
-        ./node-$version-$release_os-$release_arch &
-        main_process_id=$!
-    elif [[ "$OSTYPE" == "darwin"* ]]; then
-        echo "./node-$version-$release_os-$release_arch"
-        chmod +x ./node-$version-$release_os-$release_arch
-        ./node-$version-$release_os-$release_arch &
-        main_process_id=$!
-    else
-        echo "不支持的操作系统，请从源代码构建"
-        exit 1
+function start_process() {
+    local node_binary="./node-$version-$release_os-$release_arch"
+    
+    if [[ ! -f $node_binary ]]; then
+        echo "错误: Node binary $node_binary 不存在."
+        return 1
     fi
-
+    
+    chmod +x "$node_binary" || { echo "无法赋予可执行权限"; return 1; }
+    echo "在screen会话中启动进程..."
+    screen -dmS Quili bash -c "$node_binary"
+    main_process_id=$(pgrep -f "$node_binary")
     echo "进程已启动，PID: $main_process_id"
 }
 
@@ -102,29 +78,24 @@ function kill_screen_session() {
     fi
 }
 
-# 获取最新版本的函数
-fetch() {
-    files=$(curl -s https://releases.quilibrium.com/release | grep $release_os-$release_arch)
+# 下载新版本文件的函数
+function fetch() {
+    cd ~/ceremonyclient/node || exit 1  # 切换到 ceremonyclient/node 目录
+    files=$(curl -s https://releases.quilibrium.com/release | grep "$release_os-$release_arch")
     new_release=false
 
     for file in $files; do
         version=$(echo "$file" | cut -d '-' -f 2)
-        if ! test -f "./$file"; then
-            echo "下载新版本: $file"
-            curl -O "https://releases.quilibrium.com/$file"
-            new_release=true
+        if [[ ! -f "$file" ]]; then
+            echo "下载 $file..."
+            if curl -O "https://releases.quilibrium.com/$file"; then
+                new_release=true
+            else
+                echo "下载失败: $file"
+            fi
         fi
     done
 }
-
-# 获取最新版本
-fetch
-
-# 杀死当前运行的进程
-kill_process
-
-# 启动新进程
-start_process
 
 # 节点安装功能
 function install_node() {
@@ -236,49 +207,21 @@ function check_service_status() {
     fi
 }
 
-# 检查进程是否在运行的函数
-is_process_running() {
-    ps -p $main_process_id > /dev/null 2>&1
-    return $?
-}
+# 独立启动
+function run_node() {
+    echo "正在独立启动节点..."
+    fetch
+    kill_process
+    start_process
 
-# 杀死进程的函数
-kill_process() {
-    local process_count=$(ps -ef | grep -E "node-.*-(darwin|linux)-(amd64|arm64)" | grep -v grep | wc -l)
-    local process_pids=$(ps -ef | grep -E "node-.*-(darwin|linux)-(amd64|arm64)" | grep -v grep | awk '{print $2}' | xargs)
-
-    if [ $process_count -gt 0 ]; then
-        echo "正在杀死进程: $process_pids"
-        kill $process_pids
+    if [[ $? -eq 0 ]]; then
+        echo "节点已在screen会话中启动。您可以使用 'screen -r Quili' 查看状态。"
+        echo "使用 Ctrl+A+D 可以从 screen 会话中分离。"
     else
-        echo "没有正在运行的进程"
+        echo "启动节点失败，请检查错误信息。"
     fi
 }
 
-# 重新启动挖矿功能
-function restart_node() {
-    echo "正在检查节点进程状态..."
-
-    if is_process_running; then
-        echo "节点进程正在运行，无需重新启动。"
-    else
-        echo "节点进程未运行，正在重新启动..."
-        kill_process  # 确保没有残留进程
-
-        # 切换到指定目录并运行 release_autorun.sh
-        cd ~/ceremonyclient/node || { echo "切换目录失败"; return 1; }
-        
-        # 执行启动脚本
-        ./release_autorun.sh
-        
-        if [[ $? -eq 0 ]]; then
-            echo "节点已成功启动。您可以使用 'screen -r Quili' 查看状态。"
-            echo "使用 Ctrl+A+D 可以从 screen 会话中分离。"
-        else
-            echo "启动节点失败，请检查错误信息。"
-        fi
-    fi
-}
 # 安装最新快照
 function add_snapshots() {
     brew install unzip
@@ -301,7 +244,7 @@ function backup_set() {
 # 查看账户信息
 function check_balance() {
     cd ~/ceremonyclient/node || exit
-    local version="1.4.21.1"
+    local version="1.4.21"
     local binary="node-$version"
     
     if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -366,94 +309,71 @@ function update_script() {
 # 安装gRPC
 function setup_grpc() {
     echo "正在安装 gRPC..."
-    
-    # 杀死当前节点进程
-    kill_process
-
-    # 下载并运行 gRPC 安装脚本
     curl -o qnode_gRPC_calls_setup.sh https://raw.githubusercontent.com/oyb811026/quil/main/qnode_gRPC_calls_setup.sh
     bash qnode_gRPC_calls_setup.sh
     echo "=======================gRPC安装完成========================================="
-    
-    # 重新启动节点
-    echo "正在重新启动节点..."
-    start_process
-}
-
-# 还原配置文件功能
-function restore_backup() {
-    echo "正在还原备份文件..."
-    
-    # 杀死当前节点进程
-    kill_process
-
-    if [[ -f ~/backup/config.txt ]] && [[ -f ~/backup/keys.txt ]]; then
-        cp ~/backup/config.txt ~/ceremonyclient/node/.config/config.yml
-        cp ~/backup/keys.txt ~/ceremonyclient/node/.config/keys.yml
-        echo "备份已成功还原。"
-        
-        # 重新启动节点
-        echo "正在重新启动节点..."
-        start_process
-    else
-        echo "错误: 找不到备份文件，请确保已进行备份。"
-    fi
 }
 
 # 主循环
-while true; do
-    # 检查进程是否仍在运行
-    if ! is_process_running; then
-        echo "进程崩溃或停止。正在重新启动..."
-        start_process
-    fi
+function main() {
+    cd ~/ceremonyclient/node || exit 1  # 切换到 ceremonyclient/node 目录
 
-    # 检查是否有新版本
-    fetch
+    while true; do
+        # 下载最新版本文件
+        fetch
+        
+        # 检查是否有新版本
+        if [[ "$new_release" == true ]]; then
+            echo "检测到新版本，正在升级..."
+            kill_process
+            start_process
+        fi
 
-    if $new_release; then
-        kill_process
-        start_process
-    fi
+        # 每300秒检查一次进程状态
+        if ! is_process_running; then
+            echo "进程崩溃或停止. 正在重启..."
+            start_process
+        fi
 
-    sleep 300 # 每300秒检查一次
-done
+        sleep 300  
+    done
+}
 
-# 主菜单
+# 自动设置快捷键
+check_and_set_alias
+
 echo "=======================欢迎使用Quilibrium项目一键启动脚本======================="
 echo "1. 安装节点（支持断点续安装）"
 echo "2. 查看节点状态"
-echo "3. 重新启动挖矿"
+echo "3. 独立启动挖矿"
 echo "4. 安装最新快照"
 echo "5. 备份配置文件"
-echo "6. 还原备份文件"  # 新选项
-echo "7. 查看账户信息"
-echo "8. 解锁CPU性能限制"
-echo "9. 升级节点版本"
-echo "10. 升级脚本版本"
-echo "11. 安装gRPC"
-echo "12. 启动"
-echo "13. 杀死screen会话"
-echo "14. 退出脚本"
+echo "6. 查看账户信息"
+echo "7. 解锁CPU性能限制"
+echo "8. 升级节点版本"
+echo "9. 升级脚本版本"
+echo "10. 安装gRPC"
+echo "11. 启动主循环"
+echo "12. 杀死screen会话"
+echo "13. 退出脚本"
 echo "======================================================================"
 
 while true; do
-    read -p "请输入选项(1-14): " choice
+    read -p "请输入选项(1-13): " choice
     case $choice in
         1) install_node ;;
         2) check_service_status ;;
-        3) restart_node ;;  # 调用重新启动挖矿函数
+        3) run_node ;;
         4) add_snapshots ;;
         5) backup_set ;;
-        6) restore_backup ;;  # 调用还原备份函数
-        7) check_balance ;;
-        8) unlock_performance ;;
-        9) update_node ;;
-        10) update_script ;;
-        11) setup_grpc ;;
-        12) while ;;
-        13) kill_screen_session ;;
-        14) exit 0 ;;
+        6) check_balance ;;
+        7) unlock_performance ;;
+        8) update_node ;;
+        9) update_script ;;
+        10) setup_grpc ;;
+        11) main ;;
+        12) kill_screen_session ;;
+        13) exit 0 ;;
         *) echo "无效的选项，请重新输入。" ;;
     esac
 done
