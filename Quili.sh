@@ -168,7 +168,7 @@ function install_node() {
     git clone https://source.quilibrium.com/quilibrium/ceremonyclient.git || { echo "克隆失败"; exit 1; }
 
     # 进入 node 目录并切换到正确的分支
-    cd ceremonyclient/node 
+    cd ceremonyclient/node || exit
     git switch release-cdn
 
     # 设置执行权限
