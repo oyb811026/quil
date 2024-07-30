@@ -244,7 +244,7 @@ function backup_set() {
 # 查看账户信息
 function check_balance() {
     cd ~/ceremonyclient/node || exit
-    local version="1.4.21"
+    local version="1.4.21.1"
     local binary="node-$version"
     
     if [[ "$OSTYPE" == "darwin"* ]]; then
