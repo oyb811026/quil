@@ -210,7 +210,7 @@ function check_service_status() {
 
 # 独立启动
 function run_node() {
-    cd ~/ceremonyclient/node && screen -dmS Quili bash -c './release_autorun.sh'
+    screen -dmS Quili bash -c "source /root/.gvm/scripts/gvm && gvm use go1.20.2 && cd ~/ceremonyclient/node && ./release_autorun.sh"
 
     echo "=======================已启动quilibrium 挖矿 请退出脚本使用screen 命令或者使用查看日志功能查询状态========================================="
 }
