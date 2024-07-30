@@ -134,21 +134,17 @@ function install_node() {
     echo "2. 运行 'screen -r Quili' 来连接到 screen 会话"
     echo "3. 使用 Ctrl-A + Ctrl-D 来从 screen 会话中分离"
     echo "======================================"
-    
-   # 返回主菜单
-   return 0
-}
 
-    # 用户交互
-    while true; do
-        read -p "请选择操作 (1-3): " choice
-        case $choice in
-            1) exit 0 ;;  
-            2) screen -r Quili ;;  
-            3) echo "已从 screen 会话分离。"; break ;;  
-            *) echo "无效的选项，请重新输入。" ;;
-        esac
-    done
+    # 用户交互以返回主菜单
+while true; do
+    read -p "请选择操作 (1-3): " choice
+    case $choice in
+        1) echo "返回主菜单..." ; return ;;  # 返回主菜单
+        2) screen -r Quili ;;  
+        3) echo "已从 screen 会话分离。" ; break ;;  
+        *) echo "无效的选项，请重新输入。" ;;
+    esac
+done
 }
 
 # 查看常规版本节点日志
@@ -290,7 +286,7 @@ echo "======================================================================"
 while true; do
     read -p "请输入选项(1-12): " choice
     case $choice in
-        1) install_node && echo "安装成功，返回主菜单..." ;;  # 添加成功提示
+        1) install_node ;;
         2) check_service_status ;;
         3) run_node ;;
         4) add_snapshots ;;
