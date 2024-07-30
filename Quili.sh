@@ -125,9 +125,15 @@ function install_node() {
     brew update
     brew install wget git screen bison gcc make
 
-    echo "正在安装 gvm (Go 版本管理器)..."
-    bash < <(curl -s -S -L https://raw.githubusercontent.com/moovweb/gvm/master/binscripts/gvm-installer)
-    source "$HOME/.gvm/scripts/gvm"
+# 删除旧的 gvm 安装
+if [ -d "$HOME/.gvm" ]; then
+    echo "检测到旧的 gvm 安装，正在删除..."
+    rm -rf "$HOME/.gvm"
+fi
+
+echo "正在安装 gvm (Go 版本管理器)..."
+bash < <(curl -s -S -L https://raw.githubusercontent.com/moovweb/gvm/master/binscripts/gvm-installer)
+source "$HOME/.gvm/scripts/gvm"
 
     # 安装并使用 Go 版本
     echo "正在安装 Go 版本..."
