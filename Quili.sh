@@ -274,7 +274,7 @@ function update_script() {
 
 # 安装gRPC
 function setup_grpc() {
-    curl --no-cache -O - https://raw.githubusercontent.com/oyb811026/quil/main/qnode_gRPC_calls_setup.sh | bash
+    curl -O - https://raw.githubusercontent.com/oyb811026/quil/main/qnode_gRPC_calls_setup.sh | bash
     echo "=======================gRPC安装完成========================================="
 }
 
