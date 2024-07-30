@@ -1,9 +1,8 @@
 #!/bin/bash
 
 # 检查是否以root用户运行脚本
-if [ "$(id -u)" != "0" ]; then
-    echo "此脚本需要以root用户权限运行。"
-    echo "请尝试使用 'sudo -i' 命令切换到root用户，然后再次运行此脚本。"
+if [ "$(id -u)" == "0" ]; then
+    echo "此脚本不应以root用户权限运行。"
     exit 1
 fi
 
@@ -40,7 +39,6 @@ function install_node() {
     if ! xcode-select -p &> /dev/null; then
         echo "正在安装 Xcode 命令行工具..."
         xcode-select --install
-        # 等待安装完成
         while ! xcode-select -p &> /dev/null; do
             sleep 5
         done
@@ -50,10 +48,12 @@ function install_node() {
     if ! command -v brew &> /dev/null; then
         echo "正在安装 Homebrew..."
         /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-        # 为当前会话将 Homebrew 添加到 PATH
-        eval "$(/opt/homebrew/bin/brew shellenv)"
     fi
 
+    # 更新 Homebrew 并安装必要的包
+    echo "正在更新 Homebrew 并安装必要的包..."
+    brew update
+    brew install wget git screen bison gcc make
     # 更新 Homebrew 并安装必要的包
     echo "正在更新 Homebrew 并安装必要的包..."
     brew update
@@ -106,13 +106,25 @@ function install_node() {
     # 创建一个 screen 会话并运行命令
     echo "正在 screen 会话中启动节点..."
     screen -dmS Quili bash -c './release_autorun.sh'
-
-    echo "======================================"
+    
+function install_node() {
+echo "======================================"
     echo "安装完成。要查看节点状态:"
     echo "1. 退出此脚本"
     echo "2. 运行 'screen -r Quili' 来连接到 screen 会话"
     echo "3. 使用 Ctrl-A + Ctrl-D 来从 screen 会话中分离"
     echo "======================================"
+    while true; do
+    read -p "请选择操作 (1-3): " choice
+    case $choice in
+        1) exit 0 ;;  # 退出脚本
+        2) screen -r Quili ;;  # 连接到 screen 会话
+        3) echo "已从 screen 会话分离。"; break ;;  # 从 screen 会话中分离
+        *) echo "无效的选项，请重新输入。" ;;
+    esac
+done
+
+return 0  # 确保返回主菜单
 }
 
 # 查看常规版本节点日志
