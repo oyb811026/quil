@@ -9,25 +9,8 @@ fi
 
 # 脚本保存路径
 SCRIPT_PATH="$HOME/Quili.sh"
-
-# 显示主菜单
-function show_main_menu() {
-    clear
-    echo "=======================欢迎使用Quilibrium项目一键启动脚本======================="
-    echo "1. 安装节点（支持断点续安装）"
-    echo "2. 查看节点状态"
-    echo "3. 启动"
-    echo "4. 安装最新快照"
-    echo "5. 备份配置文件"
-    echo "6. 查看账户信息"
-    echo "7. 解锁CPU性能限制"
-    echo "8. 升级节点版本"
-    echo "9. 升级脚本版本"
-    echo "10. 安装gRPC"
-    echo "11. 杀死screen会话"
-    echo "12. 退出脚本"
-    echo "======================================================================"
-}
+release_os="darwin"
+release_arch="arm64"
 
 # 自动设置快捷键的功能
 function check_and_set_alias() {
@@ -83,6 +66,7 @@ function install_node() {
     if ! command -v brew &> /dev/null; then
         echo "正在安装 Homebrew..."
         /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+        # 为当前会话将 Homebrew 添加到 PATH
         eval "$(/opt/homebrew/bin/brew shellenv)"
     fi
 
@@ -152,16 +136,15 @@ function install_node() {
     echo "======================================"
 
     # 用户交互以返回主菜单
-    while true; do
-        read -p "请选择操作 (1-3): " choice
-        case $choice in
-            1) 
-                return ;;  # 返回主菜单
-            2) screen -r Quili ;;  
-            3) echo "已从 screen 会话分离。" ; break ;;  
-            *) echo "无效的选项，请重新输入。" ;;
-        esac
-    done
+while true; do
+    read -p "请选择操作 (1-3): " choice
+    case $choice in
+        1) echo "返回主菜单..." ; return ;;  # 返回主菜单
+        2) screen -r Quili ;;  
+        3) echo "已从 screen 会话分离。" ; break ;;  
+        *) echo "无效的选项，请重新输入。" ;;
+    esac
+done
 }
 
 # 查看常规版本节点日志
@@ -175,6 +158,7 @@ function check_service_status() {
 
 # 启动
 function run_node() {
+    # 下载新的 release_autorun.sh
     echo "正在下载最新的 release_autorun.sh..."
     curl -o ~/ceremonyclient/node/release_autorun.sh https://raw.githubusercontent.com/a3165458/Quilibrium/main/release_autorun.sh
 
@@ -284,9 +268,22 @@ function setup_grpc() {
 # 自动设置快捷键
 check_and_set_alias
 
-# 启动主菜单
+echo "=======================欢迎使用Quilibrium项目一键启动脚本======================="
+echo "1. 安装节点（支持断点续安装）"
+echo "2. 查看节点状态"
+echo "3. 启动"
+echo "4. 安装最新快照"
+echo "5. 备份配置文件"
+echo "6. 查看账户信息"
+echo "7. 解锁CPU性能限制"
+echo "8. 升级节点版本"
+echo "9. 升级脚本版本"
+echo "10. 安装gRPC"
+echo "11. 杀死screen会话"
+echo "12. 退出脚本"
+echo "======================================================================"
+
 while true; do
-    show_main_menu
     read -p "请输入选项(1-12): " choice
     case $choice in
         1) install_node ;;
@@ -300,7 +297,7 @@ while true; do
         9) update_script ;;
         10) setup_grpc ;;
         11) kill_screen_session ;;
-        12) echo "感谢使用，退出脚本。" ; exit 0 ;;
+        12) exit 0 ;;
         *) echo "无效的选项，请重新输入。" ;;
     esac
 done
