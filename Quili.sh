@@ -130,7 +130,7 @@ function install_node() {
     
     echo "======================================"
     echo "安装完成。要查看节点状态:"
-    echo "1. 退出此脚本"
+    echo "1. 返回主菜单"
     echo "2. 运行 'screen -r Quili' 来连接到 screen 会话"
     echo "3. 使用 Ctrl-A + Ctrl-D 来从 screen 会话中分离"
     echo "======================================"
