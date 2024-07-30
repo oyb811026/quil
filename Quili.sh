@@ -210,20 +210,30 @@ function backup_set() {
 
 # 查看账户信息
 function check_balance() {
-    cd ~/ceremonyclient/node || exit
+    cd ~/ceremonyclient/node || { echo "无法进入目录 ~/ceremonyclient/node"; return; }
+    
     local version="1.4.21.1"
     local binary="node-$version"
     
+    # 根据系统架构设置二进制文件名称
     if [[ "$OSTYPE" == "darwin"* ]]; then
-        if [[ $(uname -m) == "arm64"* ]]; then
+        if [[ $(uname -m) == "arm64" ]]; then
             binary="$binary-darwin-arm64"
         else
             binary="$binary-darwin-amd64"
         fi
     else
         echo "不支持的操作系统，请从源代码构建"
-        exit 1
+        return
     fi
+
+    # 检查二进制文件是否存在
+    if [[ ! -f "$binary" ]]; then
+        echo "错误：找不到二进制文件 '$binary'。请检查节点是否已正确安装。"
+        return
+    fi
+
+    # 执行命令并检查输出
     ./"$binary" --node-info || echo "获取账户信息失败，请检查节点是否正在运行。"
 }
 
