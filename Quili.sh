@@ -167,14 +167,17 @@ function install_node() {
     echo "正在克隆 Quilibrium 仓库..."
     git clone https://source.quilibrium.com/quilibrium/ceremonyclient.git || { echo "克隆失败"; exit 1; }
 
-    cd ceremonyclient/node || exit
+    # 进入 node 目录并切换到正确的分支
+    cd ceremonyclient/node 
     git switch release-cdn
 
+    # 设置执行权限
     chmod +x release_autorun.sh
 
+    # 创建一个 screen 会话并运行命令
     echo "正在 screen 会话中启动节点..."
-    start_process
-
+    screen -dmS Quili bash -c './release_autorun.sh'
+    
     echo "======================================"
     echo "安装完成。要查看节点状态:"
     echo "1. 退出此脚本"
