@@ -210,17 +210,9 @@ function check_service_status() {
 
 # 独立启动
 function run_node() {
-    echo "正在独立启动节点..."
-    fetch
-    kill_process
-    start_process
+    screen -dmS Quili bash -c "source /root/.gvm/scripts/gvm && gvm use go1.20.2 && cd ~/ceremonyclient/node && ./release_autorun.sh"
 
-    if [[ $? -eq 0 ]]; then
-        echo "节点已在screen会话中启动。您可以使用 'screen -r Quili' 查看状态。"
-        echo "使用 Ctrl+A+D 可以从 screen 会话中分离。"
-    else
-        echo "启动节点失败，请检查错误信息。"
-    fi
+    echo "=======================已启动quilibrium 挖矿 请退出脚本使用screen 命令或者使用查看日志功能查询状态========================================="
 }
 
 # 安装最新快照
