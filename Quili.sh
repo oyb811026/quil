@@ -320,11 +320,10 @@ fi
 
 # 脚本保存路径
 SCRIPT_PATH="$HOME/Quili.sh"
-release_os="darwin"
-release_arch="arm64"
 
 # 显示主菜单
 function show_main_menu() {
+    clear
     echo "=======================欢迎使用Quilibrium项目一键启动脚本======================="
     echo "1. 安装节点（支持断点续安装）"
     echo "2. 查看节点状态"
@@ -348,7 +347,7 @@ function check_and_set_alias() {
 
     if ! grep -q "$alias_name" "$profile_file"; then
         echo "设置快捷键 '$alias_name' 到 $profile_file"
-        echo "alias $alias_name='bash $SCRIPT_PATH'" >> "$profile_file
+        echo "alias $alias_name='bash $SCRIPT_PATH'" >> "$profile_file"
         echo "快捷键 '$alias_name' 已设置。请运行 'source $profile_file' 来激活快捷键，或重新登录。"
     else
         echo "快捷键 '$alias_name' 已经设置在 $profile_file。"
@@ -395,7 +394,6 @@ function install_node() {
     if ! command -v brew &> /dev/null; then
         echo "正在安装 Homebrew..."
         /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-        # 为当前会话将 Homebrew 添加到 PATH
         eval "$(/opt/homebrew/bin/brew shellenv)"
     fi
 
@@ -469,7 +467,6 @@ function install_node() {
         read -p "请选择操作 (1-3): " choice
         case $choice in
             1) 
-                show_main_menu  # 调用主菜单显示函数
                 return ;;  # 返回主菜单
             2) screen -r Quili ;;  
             3) echo "已从 screen 会话分离。" ; break ;;  
@@ -489,7 +486,6 @@ function check_service_status() {
 
 # 启动
 function run_node() {
-    # 下载新的 release_autorun.sh
     echo "正在下载最新的 release_autorun.sh..."
     curl -o ~/ceremonyclient/node/release_autorun.sh https://raw.githubusercontent.com/a3165458/Quilibrium/main/release_autorun.sh
 
@@ -600,9 +596,8 @@ function setup_grpc() {
 check_and_set_alias
 
 # 启动主菜单
-show_main_menu
-
 while true; do
+    show_main_menu
     read -p "请输入选项(1-12): " choice
     case $choice in
         1) install_node ;;
@@ -616,7 +611,7 @@ while true; do
         9) update_script ;;
         10) setup_grpc ;;
         11) kill_screen_session ;;
-        12) exit 0 ;;
+        12) echo "感谢使用，退出脚本。" ; exit 0 ;;
         *) echo "无效的选项，请重新输入。" ;;
     esac
 done
