@@ -396,7 +396,7 @@ while true; do
     case $choice in
         1) install_node ;;
         2) check_service_status ;;
-        3) run_node ;;
+        3) restart_node ;;  # 调用重新启动挖矿函数
         4) add_snapshots ;;
         5) backup_set ;;
         6) restore_backup ;;  # 调用还原备份函数
