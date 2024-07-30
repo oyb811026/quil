@@ -207,11 +207,24 @@ function check_service_status() {
     fi
 }
 
-# 重新启动
-function run_node() {
-    screen -dmS Quili bash -c "source /root/.gvm/scripts/gvm && gvm use go1.20.2 && cd ~/ceremonyclient/node && ./release_autorun.sh"
+# 重新启动挖矿功能
+function restart_node() {
+    echo "正在检查节点进程状态..."
 
-    echo "=======================已启动quilibrium 挖矿 请退出脚本使用screen 命令或者使用查看日志功能查询状态========================================="
+    if is_process_running; then
+        echo "节点进程正在运行，无需重新启动。"
+    else
+        echo "节点进程未运行，正在重新启动..."
+        kill_process  # 确保没有残留进程
+        start_process  # 启动新的节点进程
+
+        if [[ $? -eq 0 ]]; then
+            echo "节点已在screen会话中启动。您可以使用 'screen -r Quili' 查看状态。"
+            echo "使用 Ctrl+A+D 可以从 screen 会话中分离。"
+        else
+            echo "启动节点失败，请检查错误信息。"
+        fi
+    fi
 }
 
 # 安装最新快照
