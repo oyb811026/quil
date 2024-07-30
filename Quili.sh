@@ -209,8 +209,7 @@ function check_service_status() {
 
 # 检查进程是否在运行的函数
 function is_process_running() {
-    # 使用进程名来检查进程是否在运行
-    if pgrep -f "node-.*-$release_os-$release_arch" > /dev/null; then
+    if pgrep -f "node--darwin-arm64" > /dev/null; then
         return 0  # 进程正在运行
     else
         return 1  # 进程未运行
@@ -226,17 +225,21 @@ function restart_node() {
     else
         echo "节点进程未运行，正在重新启动..."
         kill_process  # 确保没有残留进程
-        start_process  # 启动新的节点进程
 
+        # 切换到指定目录并运行 release_autorun.sh
+        cd ~/ceremonyclient/node || { echo "切换目录失败"; return 1; }
+        
+        # 执行启动脚本
+        ./release_autorun.sh
+        
         if [[ $? -eq 0 ]]; then
-            echo "节点已在screen会话中启动。您可以使用 'screen -r Quili' 查看状态。"
+            echo "节点已成功启动。您可以使用 'screen -r Quili' 查看状态。"
             echo "使用 Ctrl+A+D 可以从 screen 会话中分离。"
         else
             echo "启动节点失败，请检查错误信息。"
         fi
     fi
 }
-
 # 安装最新快照
 function add_snapshots() {
     brew install unzip
