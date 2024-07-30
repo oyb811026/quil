@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 
 # 检查是否以root用户运行脚本
-if [ "$(id -u)" == "0" ]; then
-    echo "此脚本不应以root用户权限运行。"
+if [ "$(id -u)" != "0" ]; then
+    echo "此脚本需要以root用户权限运行。"
+    echo "请尝试使用 'sudo -i' 命令切换到root用户，然后再次运行此脚本。"
     exit 1
 fi
 
@@ -28,39 +29,39 @@ function check_and_set_alias() {
 }
 
 # 启动进程的函数
-start_process() {
+function start_process() {
     local node_binary="./node-$version-$release_os-$release_arch"
     
     if [[ ! -f $node_binary ]]; then
-        echo "Error: Node binary $node_binary does not exist."
-        exit 1
+        echo "错误: Node binary $node_binary 不存在."
+        return 1
     fi
     
     chmod +x "$node_binary"  # 赋予可执行权限
-    echo "Starting process in screen session..."
+    echo "在screen会话中启动进程..."
     screen -dmS Quili bash -c "$node_binary"  # 在screen会话中启动进程
     main_process_id=$(pgrep -f "$node_binary")  # 获取进程ID
-    echo "Process started with PID $main_process_id"
+    echo "进程已启动，PID: $main_process_id"
 }
 
 # 检查进程是否在运行的函数
-is_process_running() {
-    pgrep -P $main_process_id > /dev/null
+function is_process_running() {
+    pgrep -f "$main_process_id" > /dev/null
     return $?  # 返回状态码
 }
 
 # 杀死进程的函数
-kill_process() {
+function kill_process() {
     if pgrep -f "node-.*-$release_os-$release_arch" > /dev/null; then
-        echo "Killing processes matching node-.*-$release_os-$release_arch"
+        echo "正在杀死匹配的进程..."
         pkill -f "node-.*-$release_os-$release_arch"
     else
-        echo "No processes running"
+        echo "没有找到运行的进程"
     fi
 }
 
 # 杀死screen会话的函数
-kill_screen_session() {
+function kill_screen_session() {
     local session_name="Quili"
     if screen -list | grep -q "$session_name"; then
         echo "找到以下screen会话："
@@ -69,9 +70,9 @@ kill_screen_session() {
         # 提示用户选择要杀死的会话
         read -p "请输入要杀死的会话ID（例如11687）: " session_id
         if [[ -n "$session_id" ]]; then
-            echo "Killing screen session '$session_id'..."
+            echo "正在杀死screen会话 '$session_id'..."
             screen -S "$session_id" -X quit  # 杀死指定的screen会话
-            echo "Screen session '$session_id' has been killed."
+            echo "Screen会话 '$session_id' 已被杀死."
         else
             echo "无效的会话ID。"
         fi
@@ -81,18 +82,18 @@ kill_screen_session() {
 }
 
 # 下载新版本文件的函数
-fetch() {
+function fetch() {
     files=$(curl -s https://releases.quilibrium.com/release | grep "$release_os-$release_arch")
     new_release=false
 
     for file in $files; do
         version=$(echo "$file" | cut -d '-' -f 2)
         if [[ ! -f "./$file" ]]; then
-            echo "Downloading $file..."
+            echo "下载 $file..."
             if curl -O "https://releases.quilibrium.com/$file"; then
                 new_release=true  # 标记为有新版本
             else
-                echo "Failed to download $file"
+                echo "下载失败: $file"
             fi
         fi
     done
@@ -138,7 +139,7 @@ function install_node() {
     fi
 
     echo "正在克隆 Quilibrium 仓库..."
-    git clone https://source.quilibrium.com/quilibrium/ceremonyclient.git
+    git clone https://source.quilibrium.com/quilibrium/ceremonyclient.git || { echo "克隆失败"; exit 1; }
 
     cd ceremonyclient/node || exit
     git switch release-cdn
@@ -169,7 +170,11 @@ function install_node() {
 
 # 查看常规版本节点日志
 function check_service_status() {
-    screen -r Quili
+    if screen -list | grep -q "Quili"; then
+        screen -r Quili
+    else
+        echo "没有找到名为 'Quili' 的screen会话."
+    fi
 }
 
 # 独立启动
@@ -190,7 +195,7 @@ function run_node() {
 # 安装最新快照
 function add_snapshots() {
     brew install unzip
-    rm -r "$HOME/ceremonyclient/node/.config/store"
+    rm -rf "$HOME/ceremonyclient/node/.config/store"
     wget -qO- https://snapshots.cherryservers.com/quilibrium/store.zip > /tmp/store.zip
     unzip -j -o /tmp/store.zip -d "$HOME/ceremonyclient/node/.config/store"
     rm /tmp/store.zip
@@ -219,10 +224,10 @@ function check_balance() {
             binary="$binary-darwin-amd64"
         fi
     else
-        echo "unsupported OS for releases, please build from source"
+        echo "不支持的操作系统，请从源代码构建"
         exit 1
     fi
-    ./"$binary" --node-info
+    ./"$binary" --node-info || echo "获取账户信息失败，请检查节点是否正在运行。"
 }
 
 # 解锁CPU性能限制
@@ -287,7 +292,7 @@ function main() {
 
     while true; do
         if ! is_process_running; then  # 如果进程没有在运行
-            echo "Process crashed or stopped. Restarting..."
+            echo "进程崩溃或停止. 正在重启..."
             start_process  # 重新启动进程
         fi
 
@@ -317,7 +322,7 @@ echo "8. 升级节点版本"
 echo "9. 升级脚本版本"
 echo "10. 安装gRPC"
 echo "11. 启动主循环"
-echo "12. 杀死screen会话"  # 新增选项
+echo "12. 杀死screen会话"
 echo "13. 退出脚本"
 echo "======================================================================"
 
@@ -326,17 +331,17 @@ while true; do
     case $choice in
         1) install_node ;;
         2) check_service_status ;;
-        3) run_node ;;  # 确保独立启动的选项
+        3) run_node ;;
         4) add_snapshots ;;
         5) backup_set ;;
         6) check_balance ;;
         7) unlock_performance ;;
         8) update_node ;;
         9) update_script ;;
-        10) setup_grpc ;;  # 安装gRPC
-        11) main ;;  # 启动主循环
-        12) kill_screen_session ;;  # 杀死screen会话
-        13) exit 0 ;;  # 正常退出脚本
+        10) setup_grpc ;;
+        11) main ;;
+        12) kill_screen_session ;;
+        13) exit 0 ;;
         *) echo "无效的选项，请重新输入。" ;;
     esac
 done
