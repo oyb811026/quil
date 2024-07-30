@@ -165,9 +165,11 @@ function run_node() {
     # 确保新文件具有执行权限
     chmod +x ~/ceremonyclient/node/release_autorun.sh
 
-    # 启动新的 screen 会话
-    screen -dmS Quili bash -c "source /root/.gvm/scripts/gvm && gvm use go1.20.2 && cd ~/ceremonyclient/node && ./release_autorun.sh"
+    # 切换到 ceremonyclient/node 目录
+    cd ~/ceremonyclient/node || { echo "无法进入目录 ~/ceremonyclient/node"; exit 1; }
 
+    # 启动新的 screen 会话
+    screen -dmS Quili bash -c './release_autorun.sh'
     echo "=======================已启动quilibrium 挖矿 请退出脚本使用screen 命令或者使用查看日志功能查询状态========================================="
 }
 
