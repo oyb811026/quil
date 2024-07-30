@@ -175,7 +175,6 @@ function check_service_status() {
 # 独立启动
 function run_node() {
     echo "正在独立启动节点..."
-    # 确保使用最新的节点版本
     fetch  # 检查并下载最新版本
     kill_process  # 杀死旧的进程
     start_process  # 启动新的节点进程
@@ -274,7 +273,9 @@ function update_script() {
 
 # 安装gRPC
 function setup_grpc() {
-    curl -O - https://raw.githubusercontent.com/oyb811026/quil/main/qnode_gRPC_calls_setup.sh | bash
+    echo "正在安装 gRPC..."
+    curl -o qnode_gRPC_calls_setup.sh https://raw.githubusercontent.com/oyb811026/quil/main/qnode_gRPC_calls_setup.sh
+    bash qnode_gRPC_calls_setup.sh
     echo "=======================gRPC安装完成========================================="
 }
 
@@ -332,7 +333,7 @@ while true; do
         7) unlock_performance ;;
         8) update_node ;;
         9) update_script ;;
-        10) setup_grpc ;;
+        10) setup_grpc ;;  # 安装gRPC
         11) main ;;  # 启动主循环
         12) kill_screen_session ;;  # 杀死screen会话
         13) exit 0 ;;  # 正常退出脚本
