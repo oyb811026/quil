@@ -61,12 +61,22 @@ kill_process() {
 
 # 杀死screen会话的函数
 kill_screen_session() {
-    if screen -list | grep -q "Quili"; then
-        echo "Killing screen session 'Quili'..."
-        screen -S Quili -X quit  # 杀死指定的screen会话
-        echo "Screen session 'Quili' has been killed."
+    local session_name="Quili"
+    if screen -list | grep -q "$session_name"; then
+        echo "找到以下screen会话："
+        screen -list | grep "$session_name"  # 列出所有名为 Quili 的会话
+        
+        # 提示用户选择要杀死的会话
+        read -p "请输入要杀死的会话ID（例如11687）: " session_id
+        if [[ -n "$session_id" ]]; then
+            echo "Killing screen session '$session_id'..."
+            screen -S "$session_id" -X quit  # 杀死指定的screen会话
+            echo "Screen session '$session_id' has been killed."
+        else
+            echo "无效的会话ID。"
+        fi
     else
-        echo "No screen session named 'Quili' found."
+        echo "没有找到名为 '$session_name' 的screen会话."
     fi
 }
 
