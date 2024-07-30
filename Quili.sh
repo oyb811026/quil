@@ -175,8 +175,11 @@ function check_service_status() {
 # 独立启动
 function run_node() {
     echo "正在独立启动节点..."
-    screen -dmS Quili bash -c "source \$HOME/.gvm/scripts/gvm && gvm use go1.20.2 && cd ~/ceremonyclient/node && ./release_autorun.sh"
-    
+    # 确保使用最新的节点版本
+    fetch  # 检查并下载最新版本
+    kill_process  # 杀死旧的进程
+    start_process  # 启动新的节点进程
+
     if [[ $? -eq 0 ]]; then
         echo "节点已在screen会话中启动。您可以使用 'screen -r Quili' 查看状态。"
         echo "使用 Ctrl+A+D 可以从 screen 会话中分离。"
