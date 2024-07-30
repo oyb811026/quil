@@ -26,39 +26,6 @@ function check_and_set_alias() {
     fi
 }
 
-# 启动进程的函数
-function start_process() {
-    local node_binary="./node-$version-$release_os-$release_arch"
-    
-    if [[ ! -f $node_binary ]]; then
-        echo "错误: Node binary $node_binary 不存在."
-        return 1
-    fi
-    
-    chmod +x "$node_binary" || { echo "无法赋予可执行权限"; return 1; }
-    echo "在screen会话中启动进程..."
-    screen -dmS Quili bash -c "$node_binary"
-    main_process_id=$(pgrep -f "$node_binary")  # 确保这个命令能得到有效的 PID
-    echo "进程已启动，PID: $main_process_id"
-}
-
-
-# 检查进程是否在运行的函数
-function is_process_running() {
-    pgrep -f "$node_binary" > /dev/null  # 使用 $node_binary 代替 $main_process_id
-    return $?  
-}
-
-# 杀死进程的函数
-function kill_process() {
-    if pgrep -f "node-.*-$release_os-$release_arch" > /dev/null; then
-        echo "正在杀死匹配的进程..."
-        pkill -f "node-.*-$release_os-$release_arch" || echo "杀死进程失败"
-    else
-        echo "没有找到运行的进程"
-    fi
-}
-
 # 杀死screen会话的函数
 function kill_screen_session() {
     local session_name="Quili"
@@ -77,25 +44,6 @@ function kill_screen_session() {
     else
         echo "没有找到名为 '$session_name' 的screen会话."
     fi
-}
-
-# 下载新版本文件的函数
-function fetch() {
-    cd ~/ceremonyclient/node || exit 1  # 切换到 ceremonyclient/node 目录
-    files=$(curl -s https://releases.quilibrium.com/release | grep "$release_os-$release_arch")
-    new_release=false
-
-    for file in $files; do
-        version=$(echo "$file" | cut -d '-' -f 2)
-        if [[ ! -f "$file" ]]; then
-            echo "下载 $file..."
-            if curl -O "https://releases.quilibrium.com/$file"; then
-                new_release=true
-            else
-                echo "下载失败: $file"
-            fi
-        fi
-    done
 }
 
 # 节点安装功能
@@ -208,7 +156,7 @@ function check_service_status() {
     fi
 }
 
-# 独立启动
+# 启动
 function run_node() {
     screen -dmS Quili bash -c "source /root/.gvm/scripts/gvm && gvm use go1.20.2 && cd ~/ceremonyclient/node && ./release_autorun.sh"
 
@@ -307,38 +255,13 @@ function setup_grpc() {
     echo "=======================gRPC安装完成========================================="
 }
 
-# 主循环
-function main() {
-    cd ~/ceremonyclient/node || exit 1  # 切换到 ceremonyclient/node 目录
-
-    while true; do
-        # 下载最新版本文件
-        fetch
-        
-        # 检查是否有新版本
-        if [[ "$new_release" == true ]]; then
-            echo "检测到新版本，正在升级..."
-            kill_process
-            start_process
-        fi
-
-        # 每300秒检查一次进程状态
-        if ! is_process_running; then
-            echo "进程崩溃或停止. 正在重启..."
-            start_process
-        fi
-
-        sleep 300  
-    done
-}
-
 # 自动设置快捷键
 check_and_set_alias
 
 echo "=======================欢迎使用Quilibrium项目一键启动脚本======================="
 echo "1. 安装节点（支持断点续安装）"
 echo "2. 查看节点状态"
-echo "3. 独立启动挖矿"
+echo "3. 启动"
 echo "4. 安装最新快照"
 echo "5. 备份配置文件"
 echo "6. 查看账户信息"
@@ -346,9 +269,8 @@ echo "7. 解锁CPU性能限制"
 echo "8. 升级节点版本"
 echo "9. 升级脚本版本"
 echo "10. 安装gRPC"
-echo "11. 启动主循环"
-echo "12. 杀死screen会话"
-echo "13. 退出脚本"
+echo "11. 杀死screen会话"
+echo "12. 退出脚本"
 echo "======================================================================"
 
 while true; do
@@ -364,9 +286,8 @@ while true; do
         8) update_node ;;
         9) update_script ;;
         10) setup_grpc ;;
-        11) main ;;
-        12) kill_screen_session ;;
-        13) exit 0 ;;
+        11) kill_screen_session ;;
+        12) exit 0 ;;
         *) echo "无效的选项，请重新输入。" ;;
     esac
 done
