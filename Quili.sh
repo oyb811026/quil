@@ -153,8 +153,14 @@ function check_service_status() {
 
 # 独立启动
 function run_node() {
+    echo "正在独立启动节点..."
     screen -dmS Quili bash -c "source \$HOME/.gvm/scripts/gvm && gvm use go1.20.2 && cd ~/ceremonyclient/node && ./release_autorun.sh"
-    echo "=======================已启动quilibrium 挖矿 请退出脚本使用screen 命令或者使用查看日志功能查询状态========================================="
+    
+    if [[ $? -eq 0 ]]; then
+        echo "节点已在screen会话中启动。您可以使用 'screen -r Quili' 查看状态。"
+    else
+        echo "启动节点失败，请检查错误信息。"
+    fi
 }
 
 # 安装最新快照
@@ -293,7 +299,7 @@ while true; do
     case $choice in
         1) install_node ;;
         2) check_service_status ;;
-        3) run_node ;;
+        3) run_node ;;  # 确保独立启动的选项
         4) add_snapshots ;;
         5) backup_set ;;
         6) check_balance ;;
