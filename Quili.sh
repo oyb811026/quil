@@ -38,13 +38,14 @@ function start_process() {
     chmod +x "$node_binary" || { echo "无法赋予可执行权限"; return 1; }
     echo "在screen会话中启动进程..."
     screen -dmS Quili bash -c "$node_binary"
-    main_process_id=$(pgrep -f "$node_binary")
+    main_process_id=$(pgrep -f "$node_binary")  # 确保这个命令能得到有效的 PID
     echo "进程已启动，PID: $main_process_id"
 }
 
+
 # 检查进程是否在运行的函数
 function is_process_running() {
-    pgrep -f "$main_process_id" > /dev/null
+    pgrep -f "$node_binary" > /dev/null  # 使用 $node_binary 代替 $main_process_id
     return $?  
 }
 
