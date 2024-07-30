@@ -49,27 +49,32 @@ add_line_after_pattern() {
   $2" "$3" || { echo "❌ 无法在 '$1' 后添加行！退出..."; exit 1; }
 }
 
+# 删除现有行的函数
+remove_lines() {
+    sed -i '' "/^ *$1:/d" "$2"
+}
+
 # 步骤 1：启用 gRPC 和 REST
 echo "🚀 启用 gRPC 和 REST..."
 sleep 1
 cd "$HOME/ceremonyclient/node" || { echo "❌ 无法切换目录到 ~/ceremonyclient/node！退出..."; exit 1; }
 
 # 删除现有的 listenGrpcMultiaddr 和 listenRESTMultiaddr 行（如果存在）
-sed -i '' '/^ *listenGrpcMultiaddr:/d' .config/config.yml
-sed -i '' '/^ *listenRESTMultiaddr:/d' .config/config.yml
+remove_lines "listenGrpcMultiaddr" ".config/config.yml"
+remove_lines "listenRESTMultiaddr" ".config/config.yml"
 
-# 添加 listenGrpcMultiaddr: "/ip4/127.0.0.1/tcp/8337"
-echo "listenGrpcMultiaddr: \"/ip4/127.0.0.1/tcp/8337\"" | tee -a .config/config.yml > /dev/null || { echo "❌ 无法启用 gRPC！退出..."; exit 1; }
-
-# 添加 listenRESTMultiaddr: "/ip4/127.0.0.1/tcp/8338"
-echo "listenRESTMultiaddr: \"/ip4/127.0.0.1/tcp/8338\"" | tee -a .config/config.yml > /dev/null || { echo "❌ 无法启用 REST！退出..."; exit 1; }
+# 添加 listenGrpcMultiaddr 和 listenRESTMultiaddr
+{
+    echo "listenGrpcMultiaddr: \"/ip4/127.0.0.1/tcp/8337\""
+    echo "listenRESTMultiaddr: \"/ip4/127.0.0.1/tcp/8338\""
+} >> .config/config.yml || { echo "❌ 无法启用 gRPC 和 REST！退出..."; exit 1; }
 
 sleep 1
 
 # 步骤 2：启用统计收集
 echo "📊 启用统计收集..."
-if ! line_exists "statsMultiaddr: \"/dns/stats.quilibrium.com/tcp/443\"" .config/config.yml; then
-    add_line_after_pattern "engine" "statsMultiaddr: \"/dns/stats.quilibrium.com/tcp/443\"" .config/config.yml
+if ! line_exists "statsMultiaddr: \"/dns/stats.quilibrium.com/tcp/443\"" ".config/config.yml"; then
+    add_line_after_pattern "engine" "statsMultiaddr: \"/dns/stats.quilibrium.com/tcp/443\"" ".config/config.yml"
     echo "✅ 统计收集已启用。"
 else
     echo "✅ 统计收集已经启用。"
@@ -79,17 +84,16 @@ sleep 1
 
 # 步骤 3：检查和修改 listenMultiaddr
 echo "🔍 检查 listenMultiaddr..."
-if grep -qF "  listenMultiaddr: /ip4/0.0.0.0/udp/8336/quic" .config/config.yml; then
+if grep -qF "  listenMultiaddr: /ip4/0.0.0.0/udp/8336/quic" ".config/config.yml"; then
     echo "🛠️ 正在修改 listenMultiaddr..."
-    sed -i '' -E 's|^ *  listenMultiaddr: /ip4/0.0.0.0/udp/8336/quic *$|  listenMultiaddr: /ip4/0.0.0.0/tcp/8336|' .config/config.yml
+    sed -i '' -E 's|^ *  listenMultiaddr: /ip4/0.0.0.0/udp/8336/quic *$|  listenMultiaddr: /ip4/0.0.0.0/tcp/8336|' ".config/config.yml"
     if [ $? -eq 0 ]; then
         echo "✅ listenMultiaddr 已修改为使用 TCP 协议。"
     else
         echo "❌ 无法修改 listenMultiaddr！请手动检查 config.yml 文件。"
     fi
 else
-    # 检查新的 listenMultiaddr 是否存在
-    if grep -qF "  listenMultiaddr: /ip4/0.0.0.0/tcp/8336" .config/config.yml; then
+    if grep -qF "  listenMultiaddr: /ip4/0.0.0.0/tcp/8336" ".config/config.yml"; then
         echo "✅ 找到了新的 listenMultiaddr 行。"
     else
         echo "❌ 既没有找到旧的也没有找到新的 listenMultiaddr。可能会导致问题。请手动检查 config.yml 文件。"
