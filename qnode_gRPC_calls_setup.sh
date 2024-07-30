@@ -36,37 +36,36 @@ Processing... ⏳
 
 EOF
 
-sleep 5  # 添加5秒的延迟
+sleep 5  # Add a 7-second delay
 
-# 检查行是否存在于文件中的函数
+# Function to check if a line exists in a file
 line_exists() {
     grep -qF "$1" "$2"
 }
 
-# 在特定模式之后添加行的函数
+# Function to add a line after a specific pattern
 add_line_after_pattern() {
-    sed -i "" "/^ *$1:/a\\
-  $2" "$3" || { echo "❌ Failed to add line after '$1'! Exiting..."; exit 1; }
+    sudo sed -i "/^ *$1:/a\  $2" "$3" || { echo "❌ Failed to add line after '$1'! Exiting..."; exit 1; }
 }
 
-# 步骤 1：启用 gRPC 和 REST
+# Step 1: Enable gRPC and REST
 echo "🚀 Enabling gRPC and REST..."
 sleep 1
 cd "$HOME/ceremonyclient/node" || { echo "❌ Failed to change directory to ~/ceremonyclient/node! Exiting..."; exit 1; }
 
-# 删除现有的 listenGrpcMultiaddr 和 listenRESTMultiaddr 行（如果存在）
-sed -i "" '/^ *listenGrpcMultiaddr:/d' .config/config.yml
-sed -i "" '/^ *listenRESTMultiaddr:/d' .config/config.yml
+# Delete existing lines for listenGrpcMultiaddr and listenRESTMultiaddr if they exist
+sudo sed -i '/^ *listenGrpcMultiaddr:/d' .config/config.yml
+sudo sed -i '/^ *listenRESTMultiaddr:/d' .config/config.yml
 
-# 添加 listenGrpcMultiaddr: "/ip4/127.0.0.1/tcp/8337"
-echo "listenGrpcMultiaddr: \"/ip4/127.0.0.1/tcp/8337\"" | tee -a .config/config.yml > /dev/null || { echo "❌ Failed to enable gRPC! Exiting..."; exit 1; }
+# Add listenGrpcMultiaddr: "/ip4/127.0.0.1/tcp/8337"
+echo "listenGrpcMultiaddr: \"/ip4/127.0.0.1/tcp/8337\"" | sudo tee -a .config/config.yml > /dev/null || { echo "❌ Failed to enable gRPC! Exiting..."; exit 1; }
 
-# 添加 listenRESTMultiaddr: "/ip4/127.0.0.1/tcp/8338"
-echo "listenRESTMultiaddr: \"/ip4/127.0.0.1/tcp/8338\"" | tee -a .config/config.yml > /dev/null || { echo "❌ Failed to enable REST! Exiting..."; exit 1; }
+# Add listenRESTMultiaddr: "/ip4/127.0.0.1/tcp/8338"
+echo "listenRESTMultiaddr: \"/ip4/127.0.0.1/tcp/8338\"" | sudo tee -a .config/config.yml > /dev/null || { echo "❌ Failed to enable REST! Exiting..."; exit 1; }
 
 sleep 1
 
-# 步骤 2：启用统计收集
+# Step 2: Enable Stats Collection
 echo "📊 Enabling Stats Collection..."
 if ! line_exists "statsMultiaddr: \"/dns/stats.quilibrium.com/tcp/443\"" .config/config.yml; then
     add_line_after_pattern "engine" "statsMultiaddr: \"/dns/stats.quilibrium.com/tcp/443\"" .config/config.yml
@@ -77,18 +76,18 @@ fi
 
 sleep 1
 
-# 步骤 3：检查并修改 listenMultiaddr
+# Step 3: Check and modify listenMultiaddr
 echo "🔍 Checking listenMultiaddr..."
 if grep -qF "  listenMultiaddr: /ip4/0.0.0.0/udp/8336/quic" .config/config.yml; then
     echo "🛠️ Modifying listenMultiaddr..."
-    sed -i "" -E 's|^ *  listenMultiaddr: /ip4/0.0.0.0/udp/8336/quic *$|  listenMultiaddr: /ip4/0.0.0.0/tcp/8336|' .config/config.yml
+    sudo sed -i -E 's|^ *  listenMultiaddr: /ip4/0.0.0.0/udp/8336/quic *$|  listenMultiaddr: /ip4/0.0.0.0/tcp/8336|' .config/config.yml
     if [ $? -eq 0 ]; then
         echo "✅ listenMultiaddr modified to use TCP protocol."
     else
         echo "❌ Failed to modify listenMultiaddr! Please check manually your config.yml file"
     fi
 else
-    # 检查新 listenMultiaddr 是否存在
+    # Check if the new listenMultiaddr exists
     if grep -qF "  listenMultiaddr: /ip4/0.0.0.0/tcp/8336" .config/config.yml; then
         echo "✅ New listenMultiaddr line found."
     else
@@ -96,10 +95,11 @@ else
     fi
 fi
 
+
 sleep 1
 
 echo""
 echo "✅ gRPC, REST, and Stats Collection setup was successful."
 echo""
-echo "✅ If you want to check manually just run: cd ~/ceremonyclient/node/.config/ && cat config.yml"
+echo "✅ If you want to check manually just run: cd /root/ceremonyclient/node/.config/ && cat config.yml"
 sleep 5
