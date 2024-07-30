@@ -111,34 +111,51 @@ function install_node() {
             sleep 5
         done
     fi
-
-    # 安装 Homebrew
+    
+# 如果尚未安装,则安装 Homebrew
     if ! command -v brew &> /dev/null; then
         echo "正在安装 Homebrew..."
         /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+        # 为当前会话将 Homebrew 添加到 PATH
+        eval "$(/opt/homebrew/bin/brew shellenv)"
     fi
 
+    # 更新 Homebrew 并安装必要的包
     echo "正在更新 Homebrew 并安装必要的包..."
     brew update
     brew install wget git screen bison gcc make
 
-    # 删除旧的 gvm 安装
-    if [ -d "$HOME/.gvm" ]; then
-        echo "检测到旧的 gvm 安装，正在删除..."
-        rm -rf "$HOME/.gvm"
-    fi
-
-    echo "正在安装 gvm (Go 版本管理器)..."
+    # 安装 gvm (Go 版本管理器)
+    echo "正在安装 gvm..."
     bash < <(curl -s -S -L https://raw.githubusercontent.com/moovweb/gvm/master/binscripts/gvm-installer)
-    source "$HOME/.gvm/scripts/gvm"
+    source $HOME/.gvm/scripts/gvm
+
+    # 获取系统架构
+    ARCH=$(uname -m)
 
     # 安装并使用 Go 版本
     echo "正在安装 Go 版本..."
-    if gvm install go1.20.2; then
+    gvm install go1.4 -B
+    gvm use go1.4
+    export GOROOT_BOOTSTRAP=$GOROOT
+
+    if [ "$ARCH" = "x86_64" ]; then
+        gvm install go1.17.13
+        gvm use go1.17.13
+        export GOROOT_BOOTSTRAP=$GOROOT
+
+        gvm install go1.20.2
+        gvm use go1.20.2
+    elif [ "$ARCH" = "arm64" ]; then
+        gvm install go1.17.13 -B
+        gvm use go1.17.13
+        export GOROOT_BOOTSTRAP=$GOROOT
+
+        gvm install go1.20.2 -B
         gvm use go1.20.2
     else
-        echo "安装 go1.20.2 失败，请检查 gvm 和网络配置。"
-        exit 1
+        echo "不支持的架构: $ARCH"
+        return 1
     fi
 
     echo "正在克隆 Quilibrium 仓库..."
