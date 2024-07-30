@@ -17,14 +17,12 @@ function check_and_set_alias() {
     local alias_name="quili"
     local profile_file="$HOME/.profile"
 
-    # 检查快捷键是否已经设置
     if ! grep -q "$alias_name" "$profile_file"; then
         echo "设置快捷键 '$alias_name' 到 $profile_file"
         echo "alias $alias_name='bash $SCRIPT_PATH'" >> "$profile_file"
         echo "快捷键 '$alias_name' 已设置。请运行 'source $profile_file' 来激活快捷键，或重新登录。"
     else
         echo "快捷键 '$alias_name' 已经设置在 $profile_file。"
-        echo "如果快捷键不起作用，请尝试运行 'source $profile_file' 或重新登录。"
     fi
 }
 
@@ -37,24 +35,24 @@ function start_process() {
         return 1
     fi
     
-    chmod +x "$node_binary"  # 赋予可执行权限
+    chmod +x "$node_binary" || { echo "无法赋予可执行权限"; return 1; }
     echo "在screen会话中启动进程..."
-    screen -dmS Quili bash -c "$node_binary"  # 在screen会话中启动进程
-    main_process_id=$(pgrep -f "$node_binary")  # 获取进程ID
+    screen -dmS Quili bash -c "$node_binary"
+    main_process_id=$(pgrep -f "$node_binary")
     echo "进程已启动，PID: $main_process_id"
 }
 
 # 检查进程是否在运行的函数
 function is_process_running() {
     pgrep -f "$main_process_id" > /dev/null
-    return $?  # 返回状态码
+    return $?  
 }
 
 # 杀死进程的函数
 function kill_process() {
     if pgrep -f "node-.*-$release_os-$release_arch" > /dev/null; then
         echo "正在杀死匹配的进程..."
-        pkill -f "node-.*-$release_os-$release_arch"
+        pkill -f "node-.*-$release_os-$release_arch" || echo "杀死进程失败"
     else
         echo "没有找到运行的进程"
     fi
@@ -65,13 +63,12 @@ function kill_screen_session() {
     local session_name="Quili"
     if screen -list | grep -q "$session_name"; then
         echo "找到以下screen会话："
-        screen -list | grep "$session_name"  # 列出所有名为 Quili 的会话
+        screen -list | grep "$session_name"
         
-        # 提示用户选择要杀死的会话
         read -p "请输入要杀死的会话ID（例如11687）: " session_id
         if [[ -n "$session_id" ]]; then
             echo "正在杀死screen会话 '$session_id'..."
-            screen -S "$session_id" -X quit  # 杀死指定的screen会话
+            screen -S "$session_id" -X quit || echo "杀死会话失败"
             echo "Screen会话 '$session_id' 已被杀死."
         else
             echo "无效的会话ID。"
@@ -91,7 +88,7 @@ function fetch() {
         if [[ ! -f "./$file" ]]; then
             echo "下载 $file..."
             if curl -O "https://releases.quilibrium.com/$file"; then
-                new_release=true  # 标记为有新版本
+                new_release=true
             else
                 echo "下载失败: $file"
             fi
@@ -102,7 +99,7 @@ function fetch() {
 # 节点安装功能
 function install_node() {
     if [[ "$OSTYPE" != "darwin"* ]]; then
-        echo "此功能仅适用于 macOS。请使用适合您操作系统的安装方法。"
+        echo "此功能仅适用于 macOS。"
         return 1
     fi
 
@@ -125,15 +122,15 @@ function install_node() {
     brew update
     brew install wget git screen bison gcc make
 
-# 删除旧的 gvm 安装
-if [ -d "$HOME/.gvm" ]; then
-    echo "检测到旧的 gvm 安装，正在删除..."
-    rm -rf "$HOME/.gvm"
-fi
+    # 删除旧的 gvm 安装
+    if [ -d "$HOME/.gvm" ]; then
+        echo "检测到旧的 gvm 安装，正在删除..."
+        rm -rf "$HOME/.gvm"
+    fi
 
-echo "正在安装 gvm (Go 版本管理器)..."
-bash < <(curl -s -S -L https://raw.githubusercontent.com/moovweb/gvm/master/binscripts/gvm-installer)
-source "$HOME/.gvm/scripts/gvm"
+    echo "正在安装 gvm (Go 版本管理器)..."
+    bash < <(curl -s -S -L https://raw.githubusercontent.com/moovweb/gvm/master/binscripts/gvm-installer)
+    source "$HOME/.gvm/scripts/gvm"
 
     # 安装并使用 Go 版本
     echo "正在安装 Go 版本..."
@@ -153,7 +150,7 @@ source "$HOME/.gvm/scripts/gvm"
     chmod +x release_autorun.sh
 
     echo "正在 screen 会话中启动节点..."
-    start_process  # 启动节点进程
+    start_process
 
     echo "======================================"
     echo "安装完成。要查看节点状态:"
@@ -166,9 +163,9 @@ source "$HOME/.gvm/scripts/gvm"
     while true; do
         read -p "请选择操作 (1-3): " choice
         case $choice in
-            1) exit 0 ;;  # 退出脚本
-            2) screen -r Quili ;;  # 连接到 screen 会话
-            3) echo "已从 screen 会话分离。"; break ;;  # 从 screen 会话中分离
+            1) exit 0 ;;  
+            2) screen -r Quili ;;  
+            3) echo "已从 screen 会话分离。"; break ;;  
             *) echo "无效的选项，请重新输入。" ;;
         esac
     done
@@ -186,9 +183,9 @@ function check_service_status() {
 # 独立启动
 function run_node() {
     echo "正在独立启动节点..."
-    fetch  # 检查并下载最新版本
-    kill_process  # 杀死旧的进程
-    start_process  # 启动新的节点进程
+    fetch
+    kill_process
+    start_process
 
     if [[ $? -eq 0 ]]; then
         echo "节点已在screen会话中启动。您可以使用 'screen -r Quili' 查看状态。"
@@ -292,24 +289,24 @@ function setup_grpc() {
 
 # 主循环
 function main() {
-    fetch  # 初始调用fetch函数以获取文件
-    kill_process  # 杀死可能正在运行的进程
-    start_process  # 启动进程
+    fetch
+    kill_process
+    start_process
 
     while true; do
-        if ! is_process_running; then  # 如果进程没有在运行
+        if ! is_process_running; then
             echo "进程崩溃或停止. 正在重启..."
-            start_process  # 重新启动进程
+            start_process
         fi
 
-        fetch  # 定期检查并下载新版本
+        fetch
 
-        if [[ "$new_release" == true ]]; then  # 如果有新版本
-            kill_process  # 杀死当前进程
-            start_process  # 启动新版本
+        if [[ "$new_release" == true ]]; then
+            kill_process
+            start_process
         fi
 
-        sleep 300  # 每300秒循环一次
+        sleep 300  
     done
 }
 
