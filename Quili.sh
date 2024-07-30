@@ -120,7 +120,11 @@ function run_node() {
 
 function add_snapshots() {
     brew install unzip
-    rm -r $HOME/ceremonyclient/node/.config/store && wget -qO- https://snapshots.cherryservers.com/quilibrium/store.zip > /tmp/store.zip && unzip -j -o /tmp/store.zip -d $HOME/ceremonyclient/node/.config/store && rm /tmp/store.zip
+    rm -r $HOME/ceremonyclient/node/.config/store
+    wget -qO- https://snapshots.cherryservers.com/quilibrium/store.zip > /tmp/store.zip
+    unzip -j -o /tmp/store.zip -d $HOME/ceremonyclient/node/.config/store
+    rm /tmp/store.zip
+
     screen -dmS Quili bash -c 'source $HOME/.gvm/scripts/gvm && gvm use go1.20.2 && cd ~/ceremonyclient/node && ./release_autorun.sh'
 }
 
@@ -154,6 +158,7 @@ function unlock_performance() {
     echo "1. 限制CPU50%性能版本"
     echo "2. CPU性能拉满版本"
     read -p "请输入选项(1或2): " version_choice
+
     if [ "$version_choice" -eq 1 ]; then
         git switch release-cdn
     elif [ "$version_choice" -eq 2 ]; then
