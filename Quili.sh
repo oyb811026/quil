@@ -127,7 +127,7 @@ function install_node() {
     # 创建一个 screen 会话并运行命令
     echo "正在 screen 会话中启动节点..."
     screen -dmS Quili bash -c './release_autorun.sh'
-    
+
     echo "======================================"
     echo "安装完成。要查看节点状态:"
     echo "1. 返回主菜单"
@@ -136,15 +136,20 @@ function install_node() {
     echo "======================================"
 
     # 用户交互以返回主菜单
-while true; do
-    read -p "请选择操作 (1-3): " choice
-    case $choice in
-        1) echo "返回主菜单..." ; return ;;  # 返回主菜单
-        2) screen -r Quili ;;  
-        3) echo "已从 screen 会话分离。" ; break ;;  
-        *) echo "无效的选项，请重新输入。" ;;
-    esac
-done
+    while true; do
+        read -p "请选择操作 (1-3): " choice
+        case $choice in
+            1) 
+                show_main_menu  # 调用主菜单显示函数
+                return ;;  # 返回主菜单
+            2) 
+                screen -r Quili ;;  
+            3) 
+                echo "已从 screen 会话分离。" ; break ;;  
+            *) 
+                echo "无效的选项，请重新输入。" ;;
+        esac
+    done
 }
 
 # 查看常规版本节点日志
