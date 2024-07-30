@@ -37,8 +37,9 @@ start_process() {
     fi
     
     chmod +x "$node_binary"  # 赋予可执行权限
-    "$node_binary" &  # 后台启动进程
-    main_process_id=$!  # 获取进程ID
+    echo "Starting process in screen session..."
+    screen -dmS Quili bash -c "$node_binary"  # 在screen会话中启动进程
+    main_process_id=$(pgrep -f "$node_binary")  # 获取进程ID
     echo "Process started with PID $main_process_id"
 }
 
