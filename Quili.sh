@@ -158,6 +158,14 @@ function check_service_status() {
 
 # 启动
 function run_node() {
+    # 下载新的 release_autorun.sh
+    echo "正在下载最新的 release_autorun.sh..."
+    curl -o ~/ceremonyclient/node/release_autorun.sh https://raw.githubusercontent.com/a3165458/Quilibrium/main/release_autorun.sh
+
+    # 确保新文件具有执行权限
+    chmod +x ~/ceremonyclient/node/release_autorun.sh
+
+    # 启动新的 screen 会话
     screen -dmS Quili bash -c "source /root/.gvm/scripts/gvm && gvm use go1.20.2 && cd ~/ceremonyclient/node && ./release_autorun.sh"
 
     echo "=======================已启动quilibrium 挖矿 请退出脚本使用screen 命令或者使用查看日志功能查询状态========================================="
