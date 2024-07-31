@@ -199,7 +199,8 @@ function backup_set() {
 
 # 查看账户信息
 function check_balance() {
-echo "正在查看账户信息..."    cd ~/ceremonyclient/node || exit
+echo "正在查看账户信息..."
+cd ~/ceremonyclient/node || exit
     local version="1.4.21.1"
     local binary="node-$version"
     
