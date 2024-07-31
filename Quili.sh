@@ -273,28 +273,22 @@ function setup_grpc() {
 # 自动设置快捷键
 check_and_set_alias
 
-# 显示主菜单
-function show_main_menu() {
-    clear
-    echo "=======================欢迎使用Quilibrium项目一键启动脚本======================="
-    echo "1. 安装节点（支持断点续安装）"
-    echo "2. 查看节点状态"
-    echo "3. 启动"
-    echo "4. 安装最新快照"
-    echo "5. 备份配置文件"
-    echo "6. 查看账户信息"
-    echo "7. 解锁CPU性能限制"
-    echo "8. 升级节点版本"
-    echo "9. 升级脚本版本"
-    echo "10. 安装gRPC"
-    echo "11. 杀死screen会话"
-    echo "12. 退出脚本"
-    echo "======================================================================"
-}
+echo "=======================欢迎使用Quilibrium项目一键启动脚本======================="
+echo "1. 安装节点（支持断点续安装）"
+echo "2. 查看节点状态"
+echo "3. 启动"
+echo "4. 安装最新快照"
+echo "5. 备份配置文件"
+echo "6. 查看账户信息"
+echo "7. 解锁CPU性能限制"
+echo "8. 升级节点版本"
+echo "9. 升级脚本版本"
+echo "10. 安装gRPC"
+echo "11. 杀死screen会话"
+echo "12. 退出脚本"
+echo "======================================================================"
 
-# 启动主菜单
 while true; do
-    show_main_menu
     read -p "请输入选项(1-12): " choice
     case $choice in
         1) install_node ;;
@@ -308,7 +302,7 @@ while true; do
         9) update_script ;;
         10) setup_grpc ;;
         11) kill_screen_session ;;
-        12) echo "感谢使用，退出脚本。" ; exit 0 ;;
+        12) exit 0 ;;
         *) echo "无效的选项，请重新输入。" ;;
     esac
 done
