@@ -134,7 +134,7 @@ function install_node() {
     echo "2. 运行 'screen -r Quili' 来连接到 screen 会话"
     echo "3. 使用 Ctrl-A + Ctrl-D 来从 screen 会话中分离"
     echo "======================================"
-    read -p "按 Enter 返回主菜单..."
+
 }
 
 # 查看常规版本节点日志
