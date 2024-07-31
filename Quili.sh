@@ -137,22 +137,7 @@ function install_node() {
     echo "2. 运行 'screen -r Quili' 来连接到 screen 会话"
     echo "3. 使用 Ctrl-A + Ctrl-D 来从 screen 会话中分离"
     echo "======================================"
-
-    # 用户交互以返回主菜单
-    while true; do
-        read -p "请选择操作 (1-3): " choice
-        case $choice in
-            1) 
-                show_main_menu  # 调用主菜单显示函数
-                return ;;  # 返回主菜单
-            2) 
-                screen -r Quili ;;  
-            3) 
-                echo "已从 screen 会话分离。" ; break ;;  
-            *) 
-                echo "无效的选项，请重新输入。" ;;
-        esac
-    done
+    read -p "按 Enter 返回主菜单..."
 }
 
 # 查看常规版本节点日志
@@ -168,6 +153,7 @@ function check_service_status() {
 
 # 启动
 function run_node() {
+    echo "正在启动节点..."
     # 下载新的 release_autorun.sh
     echo "正在下载最新的 release_autorun.sh..."
     curl -o ~/ceremonyclient/node/release_autorun.sh https://raw.githubusercontent.com/a3165458/Quilibrium/main/release_autorun.sh
@@ -180,7 +166,8 @@ function run_node() {
 
     # 启动新的 screen 会话
     screen -dmS Quili bash -c './release_autorun.sh'
-    echo "=======================已启动quilibrium 挖矿 请退出脚本使用screen 命令或者使用查看日志功能查询状态========================================="
+    echo "节点已启动。"
+    read -p "按 Enter 返回主菜单..."
 }
 
 # 安装最新快照
