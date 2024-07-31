@@ -9,27 +9,44 @@ fi
 
 # 脚本保存路径
 SCRIPT_PATH="$HOME/Quili.sh"
+release_os="darwin"
+release_arch="arm64"
 
-# 显示主菜单
-function show_main_menu() {
-    clear
-    echo "=======================欢迎使用Quilibrium项目一键启动脚本======================="
-    echo "1. 安装节点（支持断点续安装）"
-    echo "2. 查看节点状态"
-    echo "3. 启动"
-    echo "4. 安装最新快照"
-    echo "5. 备份配置文件"
-    echo "6. 查看账户信息"
-    echo "7. 解锁CPU性能限制"
-    echo "8. 升级节点版本"
-    echo "9. 升级脚本版本"
-    echo "10. 安装gRPC"
-    echo "11. 杀死screen会话"
-    echo "12. 退出脚本"
-    echo "======================================================================"
+# 自动设置快捷键的功能
+function check_and_set_alias() {
+    local alias_name="quili"
+    local profile_file="$HOME/.profile"
+
+    if ! grep -q "$alias_name" "$profile_file"; then
+        echo "设置快捷键 '$alias_name' 到 $profile_file"
+        echo "alias $alias_name='bash $SCRIPT_PATH'" >> "$profile_file"
+        echo "快捷键 '$alias_name' 已设置。请运行 'source $profile_file' 来激活快捷键，或重新登录。"
+    else
+        echo "快捷键 '$alias_name' 已经设置在 $profile_file。"
+    fi
 }
 
-# 用户交互以返回主菜单
+# 杀死screen会话的函数
+function kill_screen_session() {
+    local session_name="Quili"
+    if screen -list | grep -q "$session_name"; then
+        echo "找到以下screen会话："
+        screen -list | grep "$session_name"
+        
+        read -p "请输入要杀死的会话ID（例如11687）: " session_id
+        if [[ -n "$session_id" ]]; then
+            echo "正在杀死screen会话 '$session_id'..."
+            screen -S "$session_id" -X quit || echo "杀死会话失败"
+            echo "Screen会话 '$session_id' 已被杀死."
+        else
+            echo "无效的会话ID。"
+        fi
+    else
+        echo "没有找到名为 '$session_name' 的screen会话."
+    fi
+}
+
+# 节点安装功能
 function install_node() {
     if [[ "$OSTYPE" != "darwin"* ]]; then
         echo "此功能仅适用于 macOS。"
@@ -49,6 +66,7 @@ function install_node() {
     if ! command -v brew &> /dev/null; then
         echo "正在安装 Homebrew..."
         /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+        # 为当前会话将 Homebrew 添加到 PATH
         eval "$(/opt/homebrew/bin/brew shellenv)"
     fi
 
@@ -109,7 +127,7 @@ function install_node() {
     # 创建一个 screen 会话并运行命令
     echo "正在 screen 会话中启动节点..."
     screen -dmS Quili bash -c './release_autorun.sh'
-    
+
     echo "======================================"
     echo "安装完成。要查看节点状态:"
     echo "1. 返回主菜单"
@@ -145,6 +163,7 @@ function check_service_status() {
 
 # 启动
 function run_node() {
+    # 下载新的 release_autorun.sh
     echo "正在下载最新的 release_autorun.sh..."
     curl -o ~/ceremonyclient/node/release_autorun.sh https://raw.githubusercontent.com/a3165458/Quilibrium/main/release_autorun.sh
 
@@ -180,8 +199,7 @@ function backup_set() {
 
 # 查看账户信息
 function check_balance() {
-    cd ~/ceremonyclient/node || { echo "无法进入目录 ~/ceremonyclient/node"; return; }
-    
+    cd ~/ceremonyclient/node || exit
     local version="1.4.21.1"
     local binary="node-$version"
     
@@ -193,16 +211,8 @@ function check_balance() {
         fi
     else
         echo "不支持的操作系统，请从源代码构建"
-        return
+        exit 1
     fi
-
-    # 检查二进制文件是否存在
-    if [[ ! -f "$binary" ]]; then
-        echo "错误：找不到二进制文件 '$binary'。请检查节点是否已正确安装。"
-        return
-    fi
-
-    # 执行命令并检查输出
     ./"$binary" --node-info || echo "获取账户信息失败，请检查节点是否正在运行。"
 }
 
@@ -260,9 +270,25 @@ function setup_grpc() {
     echo "=======================gRPC安装完成========================================="
 }
 
-# 启动主菜单
+# 自动设置快捷键
+check_and_set_alias
+
+echo "=======================欢迎使用Quilibrium项目一键启动脚本======================="
+echo "1. 安装节点（支持断点续安装）"
+echo "2. 查看节点状态"
+echo "3. 启动"
+echo "4. 安装最新快照"
+echo "5. 备份配置文件"
+echo "6. 查看账户信息"
+echo "7. 解锁CPU性能限制"
+echo "8. 升级节点版本"
+echo "9. 升级脚本版本"
+echo "10. 安装gRPC"
+echo "11. 杀死screen会话"
+echo "12. 退出脚本"
+echo "======================================================================"
+
 while true; do
-    show_main_menu
     read -p "请输入选项(1-12): " choice
     case $choice in
         1) install_node ;;
@@ -276,7 +302,7 @@ while true; do
         9) update_script ;;
         10) setup_grpc ;;
         11) kill_screen_session ;;
-        12) echo "感谢使用，退出脚本。" ; exit 0 ;;
+        12) exit 0 ;;
         *) echo "无效的选项，请重新输入。" ;;
     esac
 done
