@@ -157,23 +157,21 @@ function run_node() {
     echo "节点已启动。"
 }
 
-# 安装最新快照
-function add_snapshots() {
-    brew install unzip
-    rm -rf "$HOME/ceremonyclient/node/.config/store"
-    wget -qO- https://snapshots.cherryservers.com/quilibrium/store.zip > /tmp/store.zip
-    unzip -j -o /tmp/store.zip -d "$HOME/ceremonyclient/node/.config/store"
-    rm /tmp/store.zip
-
-    screen -dmS Quili bash -c "source \$HOME/.gvm/scripts/gvm && gvm use go1.20.2 && cd ~/ceremonyclient/node && ./release_autorun.sh"
-}
-
 # 备份配置文件
-function backup_set() {
-    mkdir -p ~/backup
-    cp ~/ceremonyclient/node/.config/config.yml ~/backup/config.txt
-    cp ~/ceremonyclient/node/.config/keys.yml ~/backup/keys.txt
-    echo "=======================备份完成，请执行cd ~/backup 查看备份文件========================================="
+function backup_key(){
+    # 文件路径
+    sudo chown -R $USER:$USER $HOME/ceremonyclient/node/.config/
+    cd $HOME/ceremonyclient/node/
+    # 检查是否安装了zip
+	if ! command -v zip &> /dev/null; then
+	    echo "zip is not installed. Installing now..."
+	    sudo apt-get update
+	    sudo apt-get install zip -y
+	fi
+	
+	# 创建压缩文件
+	zip -r ~/quil_bak_$(date +%Y%m%d).zip .config
+	echo "已将 .config目录压缩并保存到$HOME下"
 }
 
 # 查看账户信息
@@ -220,15 +218,6 @@ function unlock_performance() {
     echo "=======================已解锁CPU性能限制并启动quilibrium 挖矿请退出脚本使用screen 命令或者使用查看日志功能查询状态========================================="
 }
 
-# 升级节点版本
-function update_node() {
-    cd ~/ceremonyclient/node || exit
-    git remote set-url origin https://source.quilibrium.com/quilibrium/ceremonyclient.git
-    git pull
-    git switch release-cdn
-    echo "节点已升级。请运行脚本独立启动挖矿功能启动节点。"
-}
-
 # 更新本脚本
 function update_script() {
     local script_url="https://raw.githubusercontent.com/oyb811026/quil/main/Quili.sh"
@@ -259,15 +248,13 @@ echo "=======================欢迎使用Quilibrium项目一键启动脚本=====
 echo "1. 安装节点（支持断点续安装）"
 echo "2. 查看节点状态"
 echo "3. 启动"
-echo "4. 安装最新快照"
-echo "5. 备份配置文件"
-echo "6. 查看账户信息"
-echo "7. 解锁CPU性能限制"
-echo "8. 升级节点版本"
-echo "9. 升级脚本版本"
-echo "10. 安装gRPC"
-echo "11. 杀死screen会话"
-echo "12. 退出脚本"
+echo "4. 备份配置文件"
+echo "5. 查看账户信息"
+echo "6. 解锁CPU性能限制"
+echo "7. 升级脚本版本"
+echo "8. 安装gRPC"
+echo "9. 杀死screen会话"
+echo "10. 退出脚本"
 echo "======================================================================"
 
 while true; do
@@ -276,15 +263,13 @@ while true; do
         1) install_node ;;
         2) check_service_status ;;
         3) run_node ;;
-        4) add_snapshots ;;
-        5) backup_set ;;
-        6) check_balance ;;
-        7) unlock_performance ;;
-        8) update_node ;;
-        9) update_script ;;
-        10) setup_grpc ;;
-        11) kill_screen_session ;;
-        12) exit 0 ;;
+        4) backup_set ;;
+        5) check_balance ;;
+        6) unlock_performance ;;
+        7) update_script ;;
+        8) setup_grpc ;;
+        9) kill_screen_session ;;
+        10) exit 0 ;;
         *) echo "无效的选项，请重新输入。" ;;
     esac
 done
