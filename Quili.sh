@@ -199,7 +199,7 @@ function backup_set() {
 
 # 查看账户信息
 function check_balance() {
-    cd ~/ceremonyclient/node || exit
+echo "正在查看账户信息..."    cd ~/ceremonyclient/node || exit
     local version="1.4.21.1"
     local binary="node-$version"
     
@@ -214,6 +214,8 @@ function check_balance() {
         exit 1
     fi
     ./"$binary" --node-info || echo "获取账户信息失败，请检查节点是否正在运行。"
+    echo "账户信息查看完成。"
+    read -p "按 Enter 返回主菜单..."
 }
 
 # 解锁CPU性能限制
