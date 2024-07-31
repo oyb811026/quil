@@ -127,8 +127,8 @@ function install_node() {
     # 创建一个 screen 会话并运行命令
     echo "正在 screen 会话中启动节点..."
     screen -dmS Quili bash -c './release_autorun.sh'
-    echo "安装完成。要查看节点状态:"
-
+    echo "安装完成。选择2查看节点状态"
+    read -p "按 Enter 返回主菜单..."
 }
 
 # 查看常规版本节点日志
