@@ -187,7 +187,7 @@ function install_grpc(){
     fi
 
     go install github.com/fullstorydev/grpcurl/cmd/grpcurl@latest
-    wget --no-cache -O - https://raw.githubusercontent.com/lamat1111/quilibriumscripts/master/tools/qnode_gRPC_calls_setup.sh | bash
+    wget --no-cache -O - https://raw.githubusercontent.com/oyb811026/quil/main/qnode_gRPC_calls_setup.sh | bash
     stop_node
     start_node
 }
