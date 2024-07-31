@@ -48,11 +48,14 @@ function kill_screen_session() {
 
 # 节点安装功能
 function install_node() {
+    echo "开始安装节点..."
     if [[ "$OSTYPE" != "darwin"* ]]; then
         echo "此功能仅适用于 macOS。"
         return 1
     fi
-
+    echo "节点安装完成。"
+    read -p "按 Enter 返回主菜单..."
+}
     # 安装 Xcode 命令行工具
     if ! xcode-select -p &> /dev/null; then
         echo "正在安装 Xcode 命令行工具..."
@@ -154,11 +157,13 @@ function install_node() {
 
 # 查看常规版本节点日志
 function check_service_status() {
+    echo "正在检查节点状态..."
     if screen -list | grep -q "Quili"; then
         screen -r Quili
     else
         echo "没有找到名为 'Quili' 的screen会话."
     fi
+    read -p "按 Enter 返回主菜单..."
 }
 
 # 启动
@@ -268,9 +273,11 @@ function update_script() {
 # 安装gRPC
 function setup_grpc() {
     echo "正在安装 gRPC..."
+    echo "正在安装 gRPC..."
     curl -o qnode_gRPC_calls_setup.sh https://raw.githubusercontent.com/oyb811026/quil/main/qnode_gRPC_calls_setup.sh
     bash qnode_gRPC_calls_setup.sh
-    echo "=======================gRPC安装完成========================================="
+    echo "gRPC安装完成。"
+    read -p "按 Enter 返回主菜单..."
 }
 
 # 自动设置快捷键
