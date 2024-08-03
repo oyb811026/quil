@@ -158,20 +158,10 @@ function run_node() {
 }
 
 # 备份配置文件
-function backup_key(){
-    # 文件路径
-    sudo chown -R $USER:$USER $HOME/ceremonyclient/node/.config/
-    cd $HOME/ceremonyclient/node/
-    # 检查是否安装了zip
-	if ! command -v zip &> /dev/null; then
-	    echo "zip is not installed. Installing now..."
-	    sudo apt-get update
-	    sudo apt-get install zip -y
-	fi
-	
-	# 创建压缩文件
-	zip -r ~/quil_bak_$(date +%Y%m%d).zip .config
-	echo "已将 .config目录压缩并保存到$HOME下"
+function backup_set() {
+    mkdir -p ~/backup
+    cp -r ~/ceremonyclient/node/.config ~/backup
+    echo "=======================备份完成，请执行cd ~/backup 查看备份文件========================================="
 }
 
 # 查看账户信息
