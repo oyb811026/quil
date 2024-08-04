@@ -161,7 +161,7 @@ function run_node() {
 function backup_key() {
     # 获取当前用户的主目录
     local user_home="/Users/$(stat -f "%Su" /dev/console)"  # 获取当前控制台用户
-    local config_dir="$user_home/ceremonyclient/node/.config"
+    local config_dir="/Users/root/ceremonyclient/node/.config"  # 假设该目录在root下
     local backup_file="$user_home/Desktop/quil_bak_$(date +%Y%m%d).zip"
 
     # 检查 .config 目录是否存在
@@ -170,7 +170,7 @@ function backup_key() {
         exit 1
     fi
 
-    # 更改文件所有者
+    # 更改文件所有者（如果需要）
     echo "正在更改 .config 目录的所有者..."
     chown -R "$(stat -f "%Su" /dev/console):staff" "$config_dir"  # 使用控制台用户和组
 
