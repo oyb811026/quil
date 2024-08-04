@@ -270,7 +270,7 @@ while true; do
         1) install_node ;;
         2) check_service_status ;;
         3) run_node ;;
-        4) backup_set ;;
+        4) backup_key ;;
         5) check_balance ;;
         6) unlock_performance ;;
         7) update_script ;;
