@@ -157,9 +157,6 @@ function run_node() {
     echo "节点已启动。"
 }
 
-# 调用 backup_set 函数
-backup_set
-
 # 备份配置文件
 function backup_key() {
     # 定义文件路径
