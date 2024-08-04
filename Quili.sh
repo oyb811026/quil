@@ -158,10 +158,27 @@ function run_node() {
 }
 
 # 备份配置文件
-function backup_set() {
-    mkdir -p ~/backup
-    cp -r ~/ceremonyclient/node/.config ~/backup
-    echo "=======================备份完成，请执行cd ~/backup 查看备份文件========================================="
+function backup_key() {
+    # 定义文件路径
+    local config_dir="/Users/$(whoami)/ceremonyclient/node/.config"
+    local backup_file="/Users/$(whoami)/Desktop/quil_bak_$(date +%Y%m%d).zip"
+
+    # 更改文件所有者
+    echo "正在更改 .config 目录的所有者..."
+    chown -R $(whoami):$(whoami) "$config_dir"
+
+    # 检查是否安装了zip
+    if ! command -v zip &> /dev/null; then
+        echo "zip 未安装，正在安装..."
+        brew install zip
+    else
+        echo "zip 已安装."
+    fi
+
+    # 创建压缩文件
+    echo "正在压缩 .config 目录..."
+    zip -r "$backup_file" "$config_dir"
+    echo "已将 .config 目录压缩并保存到 $backup_file"
 }
 
 # 查看账户信息
