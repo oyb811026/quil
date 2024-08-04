@@ -159,13 +159,14 @@ function run_node() {
 
 # 备份配置文件
 function backup_key() {
-    # 定义文件路径
-    local config_dir="/Users/$(whoami)/ceremonyclient/node/.config"
-    local backup_file="/Users/$(whoami)/Desktop/quil_bak_$(date +%Y%m%d).zip"
+    # 获取当前用户的主目录
+    local user_home="/Users/$(stat -f "%Su" /dev/console)"  # 获取当前控制台用户
+    local config_dir="$user_home/ceremonyclient/node/.config"
+    local backup_file="$user_home/Desktop/quil_bak_$(date +%Y%m%d).zip"
 
     # 更改文件所有者
     echo "正在更改 .config 目录的所有者..."
-    chown -R $(whoami):$(whoami) "$config_dir"
+    chown -R "$(stat -f "%Su" /dev/console):staff" "$config_dir"  # 使用控制台用户和组
 
     # 检查是否安装了zip
     if ! command -v zip &> /dev/null; then
