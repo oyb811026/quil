@@ -158,34 +158,11 @@ function run_node() {
 }
 
 # 备份配置文件
-function backup_key() {
-    # 获取当前用户的主目录
-    local user_home="/Users/$(stat -f "%Su" /dev/console)"  # 获取当前控制台用户
-    local config_dir="cd ~/ceremonyclient/node/.config"  # 假设该目录在root下
-    local backup_file="$user_home/Desktop/quil_bak_$(date +%Y%m%d).zip"
+function backup_set() {
+    mkdir -p ~/Desktop/backup
+    cp -r ~/ceremonyclient/node/.config ~/Desktop/backup
 
-    # 检查 .config 目录是否存在
-    if [ ! -d "$config_dir" ]; then
-        echo "错误: $config_dir 目录不存在。请检查路径。"
-        exit 1
-    fi
-
-    # 更改文件所有者（如果需要）
-    echo "正在更改 .config 目录的所有者..."
-    chown -R "$(stat -f "%Su" /dev/console):staff" "$config_dir"  # 使用控制台用户和组
-
-    # 检查是否安装了zip
-    if ! command -v zip &> /dev/null; then
-        echo "zip 未安装，正在安装..."
-        brew install zip
-    else
-        echo "zip 已安装."
-    fi
-
-    # 创建压缩文件
-    echo "正在压缩 .config 目录..."
-    zip -r "$backup_file" "$config_dir"
-    echo "已将 .config 目录压缩并保存到 $backup_file"
+    echo "=======================备份完成，请执行cd ~/Desktop/backup 查看备份文件========================================="
 }
 
 # 查看账户信息
@@ -277,7 +254,7 @@ while true; do
         1) install_node ;;
         2) check_service_status ;;
         3) run_node ;;
-        4) backup_key ;;
+        4) backup_set ;;
         5) check_balance ;;
         6) unlock_performance ;;
         7) update_script ;;
