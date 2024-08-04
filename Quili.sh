@@ -161,7 +161,7 @@ function run_node() {
 function backup_key() {
     # 获取当前用户的主目录
     local user_home="/Users/$(stat -f "%Su" /dev/console)"  # 获取当前控制台用户
-    local config_dir="/Users/root/ceremonyclient/node/.config"  # 假设该目录在root下
+    local config_dir="cd ~/ceremonyclient/node/.config"  # 假设该目录在root下
     local backup_file="$user_home/Desktop/quil_bak_$(date +%Y%m%d).zip"
 
     # 检查 .config 目录是否存在
