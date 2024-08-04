@@ -159,10 +159,25 @@ function run_node() {
 
 # 备份配置文件
 function backup_set() {
-    mkdir -p ~/Desktop/backup
-    cp -r ~/ceremonyclient/node/.config ~/Desktop/backup
+    backup_dir=~/Desktop/backup
 
-    echo "=======================备份完成，请执行cd ~/Desktop/backup 查看备份文件========================================="
+    # 创建备份目录
+    mkdir -p "$backup_dir"
+    if [ $? -ne 0 ]; then
+        echo "创建备份目录失败：$backup_dir"
+        return 1
+    fi
+    echo "备份目录创建成功：$backup_dir"
+
+    # 复制配置文件
+    cp -r ~/ceremonyclient/node/.config "$backup_dir"
+    if [ $? -ne 0 ]; then
+        echo "复制配置文件失败：~/ceremonyclient/node/.config 到 $backup_dir"
+        return 1
+    fi
+    echo "配置文件复制成功：~/ceremonyclient/node/.config 到 $backup_dir"
+
+    echo "=======================备份完成，请执行cd $backup_dir 查看备份文件========================================="
 }
 
 # 查看账户信息
