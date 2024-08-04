@@ -164,6 +164,12 @@ function backup_key() {
     local config_dir="$user_home/ceremonyclient/node/.config"
     local backup_file="$user_home/Desktop/quil_bak_$(date +%Y%m%d).zip"
 
+    # 检查 .config 目录是否存在
+    if [ ! -d "$config_dir" ]; then
+        echo "错误: $config_dir 目录不存在。请检查路径。"
+        exit 1
+    fi
+
     # 更改文件所有者
     echo "正在更改 .config 目录的所有者..."
     chown -R "$(stat -f "%Su" /dev/console):staff" "$config_dir"  # 使用控制台用户和组
