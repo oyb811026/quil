@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import hashlib
 import time
 import aiohttp
@@ -96,7 +97,7 @@ async def compute_task(token: str, task_data: dict) -> Optional[Tuple[float, flo
         # 阶段3: 计算结果
         flat_str = ''.join(f"{x:.0f}" for x in C.flat)
         sha256 = hashlib.sha256(flat_str.encode()).hexdigest()
-        f = int(int(sha256, 16) % 10**7
+        f = int(int(sha256, 16) % 10**7)
         
         t1 = time.time() * 1000
         result_1 = t0 / max(f, 1)  # 避免除零
